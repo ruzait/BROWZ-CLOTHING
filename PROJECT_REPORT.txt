@@ -1,0 +1,359 @@
+================================================================================
+                      PROJECT REPORT: MR. NILA TEX WEBSITE
+                           Updated: March 30, 2026
+================================================================================
+
+1. PROJECT OVERVIEW
+--------------------------------------------------------------------------------
+Mr. Nila Tex is a premium clothing and textile showroom website based in 
+Addalaichenai, Sri Lanka. The website showcases products for men, women, 
+kids, and offers quality fabrics and textiles. Features include product 
+browsing, category filtering, price range slider, search functionality, 
+and direct WhatsApp ordering.
+
+Website URL: https://mr-nilatex.netlify.app
+
+2. WEBSITE STRUCTURE
+--------------------------------------------------------------------------------
+Pages:
+- index.html (Home Page)
+  - Hero section with slider
+  - Features bar
+  - Categories section
+  - Products showcase (20 newest products only - no filters)
+  - Offers/Ramadan sale section with countdown timer
+  - About section
+  - Testimonials
+  - Contact section with form & map
+  - Footer
+
+- collections.html (Collections Page)
+  - Page header with breadcrumb
+  - Products showcase with Load More pagination
+  - Category filters
+  - Price range slider (dual-handle)
+  - Search functionality
+  - WhatsApp ordering per product
+  - Full product grid display
+
+3. TECHNOLOGIES USED
+--------------------------------------------------------------------------------
+Frontend:
+- HTML5 - Semantic markup
+- CSS3 - Styling with CSS Variables, Grid, Flexbox, Animations
+- JavaScript (ES6+) - Interactive functionality
+- Font Awesome 6.5.1 - Icon library
+- Google Fonts - Playfair Display & Poppins
+- AOS Animation Library 2.3.1 - Scroll animations
+
+Data & Backend:
+- Google Sheets - Product data storage (CSV export)
+- PapaParse 5.4.1 - CSV parsing
+- LocalStorage - Client-side caching (5 minutes TTL)
+
+External Services:
+- Google Maps Embed API - Location display
+- Netlify - Website hosting
+- WhatsApp API - Direct messaging for orders
+
+4. KEY FEATURES
+--------------------------------------------------------------------------------
+Product Management:
+- Products stored in Google Sheets
+- Automatic loading with CSV export
+- Client-side caching for performance
+- Sorting by newest (timestamp)
+- XSS protection for all user-generated content
+
+Product Display:
+- Smart image handling:
+  * Image flip effect on hover (only when both front & back images exist)
+  * Single image display (no flip) when only one image available
+  * Placeholder SVG for broken/missing images
+- Lazy loading images
+- Category badges with dynamic colors
+- Price display with discount calculation
+- WhatsApp order button per product
+
+Home Page Specific:
+- Shows only 20 newest products (no filters)
+- Clean showcase section with "View All Collections" CTA
+
+Collections Page:
+- Load More pagination (100 products per load)
+- Category filters (dynamic from product data)
+- Price range slider (dual-handle, draggable)
+- Real-time search
+- Button states: Loading, All Loaded, Load More
+
+Price Range Slider Features:
+- Dual-handle slider for min/max price selection
+- Dynamic price range based on product prices
+- Draggable thumbs with mouse and touch support
+- Price values shown above thumbs on hover
+- Visual gold gradient range indicator
+- Minimum gap enforcement (Rs.100 between min/max)
+- Responsive design for all devices
+
+Navigation:
+- Fixed transparent navbar (becomes white on scroll)
+- Mobile responsive hamburger menu
+- Search overlay
+- WhatsApp floating button
+- Back to top button
+
+Countdown Timer:
+- Validates date format before display
+- Shows "Offer Ended" message when expired
+- Displays offer name from CONFIG
+- Fallback for invalid dates
+
+5. FILE STRUCTURE
+--------------------------------------------------------------------------------
+Root Directory:
+- index.html              - Main home page (617 lines)
+- collections.html        - Collections page with pagination (597 lines)
+- main.js               - Main JavaScript file (1251 lines)
+- styles.css            - Main stylesheet (4739+ lines)
+- favicon.svg           - Website favicon
+- sitemap.xml           - XML sitemap
+- robots.txt            - Search engine robots rules
+- netlify.toml          - Netlify deployment config
+- SPEC.md               - Project specifications
+- README.md             - Project readme
+- PROJECT_REPORT.txt    - This report
+
+Images:
+- images/products/       - Product images
+- images/sections/       - Section/banner images
+- images/placeholder.svg - Image placeholder
+
+6. CONFIGURATION
+--------------------------------------------------------------------------------
+Google Sheets Integration:
+- Sheet ID: 1yr2_FNh55z2ryLj8j6NuB5E1aA8dk6acSZXgra6Fzms
+- Cache Duration: 5 minutes
+- Expected columns: Product Name, Category, Price, Old Price, Discount %, 
+  Image URL, Back Image URL, Badge, Description, Brand, Item Code, Timestamp
+
+Countdown Configuration:
+- COUNTDOWN_END_DATE: '2026-04-30T23:59:59'
+- CURRENT_OFFER: { name: 'Ramadan Special Sale', discount: '30% OFF' }
+- Validates date format; shows offer-ended message if invalid
+
+Product Categories:
+- men, women, kids, fabric, textiles, etc. (dynamically from sheet)
+
+Pagination Settings:
+- Home page: 20 products (newest only, no filters)
+- Collections page: 100 products per load with Load More button
+
+7. DISCOUNT SYSTEM LOGIC
+--------------------------------------------------------------------------------
+The discount system uses a priority-based approach:
+
+Priority Order:
+1. GLOBAL_DISCOUNT (from CONFIG) - Applied to ALL products if set > 0
+2. Calculated Discount - Calculated from Old Price + Price when Old Price exists
+3. Sheet Discount - Value from 'Discount %' column (used only if no Old Price)
+4. No Discount - Default when neither is provided
+
+Discount Calculation Formula:
+    calculatedDiscount = (1 - Price / OldPrice) × 100
+
+Badge Colors by Discount Level:
+- SUPER (≥50%): Green (#27ae60)
+- HIGH (≥30%): Red (#e74c3c)
+- MEDIUM (≥15%): Orange (#e67e22)
+- Default (<15%): Gold (#c9a959)
+
+8. SECURITY IMPLEMENTATIONS
+--------------------------------------------------------------------------------
+XSS Protection:
+- escapeHtml() function for all user-generated content
+- Applied to: product names, brands, badges, item codes, descriptions
+- WhatsApp messages use escaped content
+- Form submissions use escaped user input
+
+Form Validation:
+- Email format validation (regex)
+- Phone number validation (regex)
+- Required field validation
+- Focus on invalid field on error
+
+9. IMAGE HANDLING SYSTEM
+--------------------------------------------------------------------------------
+Smart Image Display Logic (getProductImageHTML function):
+
+1. Both images exist & different → Flip effect enabled
+2. Only front image → Single image (no flip effect)
+3. No images or load error → Placeholder SVG
+
+Key Features:
+- Automatic fallback to placeholder on image load failure
+- Consistent aspect ratio (4:5) maintained
+- Lazy loading for performance
+- onerror handler for runtime image errors
+
+10. PRICE RANGE SLIDER
+--------------------------------------------------------------------------------
+Implementation:
+- Custom dual-handle slider (no native range inputs)
+- Pure JavaScript drag implementation
+- Mouse and touch support
+
+Components:
+- Track: Gray background bar
+- Range: Gold gradient highlighted area between thumbs
+- Thumbs: White circles with gold border
+- Thumb values: Black tooltip showing price on hover
+
+Features:
+- Dynamic range calculation from min/max product prices
+- Minimum gap enforcement (Rs.100)
+- Price values appear on thumb hover
+- Visual feedback during drag (active class)
+- Triggers product filter on release
+- Responsive breakpoints for all device sizes
+
+11. RECENT UPDATES & FIXES
+--------------------------------------------------------------------------------
+March 30, 2026:
+
+Price Range Slider:
+- Implemented custom dual-handle slider
+- Added draggable thumbs with mouse/touch support
+- Price values display above thumbs on hover
+- Dynamic price range from product data
+- Responsive CSS for all device sizes
+- Fixed duplicate slider issue
+- Clean design without container box
+
+Home Page Optimization:
+- Limited home page to show only 20 newest products
+- Removed filter container from home page
+- Created dedicated renderHomeProducts() function
+- Home page now shows "Featured Collections" (20 products) with "View All" CTA
+
+Image Handling Improvements:
+- Added getProductImageHTML() helper function (main.js:310-333)
+- Smart flip detection (only enables when both images exist)
+- Automatic placeholder for missing/broken images
+- Added .product-image-single CSS class for single image display
+- Updated all 3 render locations to use new helper
+
+Code Cleanup:
+- Removed unused sliderMin/sliderMax variables
+- Fixed duplicate CSS rules
+- Cleaned up responsive breakpoints
+
+12. KNOWN ISSUES / TODOs
+--------------------------------------------------------------------------------
+- CSS has multiple @media blocks at same breakpoint (organization, not bug)
+- Some unused CSS classes remain (minimal impact)
+- Products load from Google Sheets (requires internet)
+
+13. DEPLOYMENT
+--------------------------------------------------------------------------------
+Platform: Netlify
+Build Command: (static site)
+Publish Directory: ./
+
+To deploy:
+1. Push changes to GitHub
+2. Connect repository to Netlify
+3. Netlify automatically deploys on push
+
+================================================================================
+                              END OF REPORT
+================================================================================
+
+================================================================================
+                     APPENDIX A: DESIGN SPECIFICATIONS (SPEC.md)
+================================================================================
+
+## DESIGN SPECIFICATIONS
+
+### Design Concept
+Mr. Nila Tex is a distinguished clothing and textile establishment in Addalaichenai, 
+Sri Lanka, offering premium fashion for the entire family. The website embodies 
+**luxury without pretension** - a digital flagship store that feels like walking 
+into an upscale boutique with warm Sri Lankan hospitality.
+
+### Design Language
+
+#### Aesthetic Direction
+**Elegant Minimalism meets Sri Lankan Warmth** - Clean lines, generous whitespace, 
+and sophisticated photography create a gallery-like experience, while gold accents 
+and subtle textures add warmth and premium feel.
+
+#### Color Palette
+| Color | Hex | Usage |
+|-------|-----|-------|
+| Primary Black | #1a1a1a | Sophisticated, authoritative |
+| Pure White | #ffffff | Clean canvas |
+| Cream | #f8f6f3 | Warm background alternative |
+| Gold Accent | #c9a959 | Premium, luxurious touch |
+| Soft Gold | #e8dcc8 | Subtle highlights |
+| Dark Gray | #4a4a4a | Secondary text |
+| Light Gray | #9a9a9a | Muted text |
+
+#### Typography
+| Element | Font | Style |
+|---------|------|-------|
+| Headlines | Playfair Display (serif) | Elegant, editorial feel |
+| Body & UI | Poppins (sans-serif) | Modern, readable, friendly |
+
+#### Spatial System
+- Base unit: 8px
+- Section padding: 80px-120px vertical
+- Card gaps: 24px
+- Maximum content width: 1400px
+- Mobile padding: 20px
+
+#### Motion Philosophy
+| Animation Type | Duration | Effect |
+|----------------|----------|--------|
+| Entrance animations | 400ms | Fade-up with stagger (ease-out) |
+| Scroll animations | - | Subtle parallax, reveal on intersection |
+| Hover states | 300ms | Scale 1.02-1.05, shadow lift, color transitions |
+| Product cards | 600ms | Image zoom on hover, overlay reveal |
+
+### Responsive Breakpoints
+| Device | Width | Layout |
+|--------|-------|--------|
+| Desktop | >1200px | Full layouts, 4-column grids |
+| Tablet | 768px-1200px | 2-column grids, adjusted spacing |
+| Mobile | <480px | Single column, hamburger menu |
+
+### Technical Implementation
+
+#### Architecture
+- Two HTML files (index.html, collections.html)
+- External CSS file with CSS custom properties
+- Vanilla JavaScript (ES6+) for interactivity
+- No build tools required
+
+#### External Dependencies
+- Google Fonts (Playfair Display, Poppins)
+- Font Awesome 6.5.1
+- AOS Library 2.3.1
+- PapaParse 5.4.1
+
+#### Performance Optimizations
+- Lazy loading images (loading="lazy")
+- CSS animations (GPU-accelerated)
+- Client-side caching (5 min TTL)
+- Debounced search (300ms)
+- Smart image loading (placeholder for errors)
+
+#### SEO Implementation
+- Semantic HTML5 structure
+- Meta tags (title, description, keywords, Open Graph)
+- Schema.org LocalBusiness markup
+- Proper heading hierarchy (H1 → H6)
+- Alt text for all images
+
+================================================================================
+                          END OF SPECIFICATIONS
+================================================================================
