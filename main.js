@@ -334,7 +334,7 @@ function convertGoogleDriveLink(url) {
     if (!url || !url.includes('drive.google.com')) {
         return url;
     }
-    const fileId = url.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1];
+    const fileId = url.match(/open\?id=([a-zA-Z0-9_-]+)/)?.[1] || url.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1];
     if (fileId) {
         return `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
     }
@@ -403,11 +403,6 @@ function validateProduct(item, index) {
         errors.push('Invalid or missing price');
     }
     
-    const imageUrl = item['Image URL'] || item.Image || item.image;
-    if (!imageUrl || !isValidUrl(imageUrl)) {
-        errors.push('Invalid image URL');
-    }
-    
     return {
         isValid: errors.length === 0,
         errors: errors
@@ -415,29 +410,47 @@ function validateProduct(item, index) {
 }
 
 async function loadProductsFromExcel() {
-    const cachedProducts = getCachedProducts();
-    if (cachedProducts) {
-        products = cachedProducts;
-        return true;
-    }
+    // Always fetch fresh data (remove cache check for now)
+    const cachedProducts = null;
+    
+    console.log('Fetching products from Google Sheet...');
+    console.log('Sheet ID:', CONFIG.SHEET_ID);
     
     try {
-        const csvUrl = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sheet1`;
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFEZ0NWHMAIaKg8JQnQEG6gBtqr1aIz0UMpCnCwPY2_m_og_FMDPY_lkre0JSe2BUlfvVgWcKMfXvD/pub?output=csv';
         
-        const response = await fetch(csvUrl);
-        if (!response.ok) throw new Error('Network response was not ok');
+        console.log('Fetching:', csvUrl);
+        
+        const response = await fetch(csvUrl, {
+            cache: 'no-cache'
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.status);
+        }
         
         const csvText = await response.text();
+        console.log('Raw CSV length:', csvText.length);
+        console.log('First 500 chars:', csvText.substring(0, 500));
         
         if (!csvText || csvText.trim() === '') {
             throw new Error('Empty response from sheet');
         }
         
-        const rows = Papa.parse(csvText).data;
+        const rows = Papa.parse(csvText, {
+            skipEmptyLines: true,
+            transformHeader: (header) => header.trim().replace(/^["']|["']$/g, '')
+        }).data;
+        
+        console.log('Parsed rows:', rows.length);
         
         if (rows.length < 2) throw new Error('No data found in sheet');
         
         const headers = rows[0].map(h => (h || '').trim());
+        console.log('Headers:', headers);
         
         const rawProducts = rows.slice(1).filter(row => row.length > 1 && row[0]);
         
@@ -466,8 +479,8 @@ async function loadProductsFromExcel() {
                 console.warn(`Product '${productName}': Discount in sheet (${sheetDiscount}%) doesn't match calculation based on ${CONFIG.CURRENCY}${formatPrice(price)} vs ${CONFIG.CURRENCY}${formatPrice(oldPrice)}. Updated to ${calculatedDiscount}%.`);
             }
             
-            const imageUrl = item['Image URL'] || item.Image || item.image;
-            const backImageUrl = item['Back Image URL'] || item['Back Image'] || item.BackImage || item.backImage || item.Image || item.image;
+            const imageUrl = item['Front Image'] || item.Image || item.image || item['Image URL'];
+            const backImageUrl = item['Back Image'] || item.BackImage || item.backImage || item.Image || item.image;
             
             validatedProducts.push({
                 id: index + 1,
@@ -487,6 +500,7 @@ async function loadProductsFromExcel() {
             });
         });
         
+        console.log('Validated products:', validatedProducts.length);
         products = validatedProducts;
         
         products.sort((a, b) => {
@@ -505,7 +519,9 @@ async function loadProductsFromExcel() {
         console.log('Products loaded from Google Sheets:', products.length);
         return true;
     } catch (error) {
-        console.error('Error loading products:', error.message);
+        console.error('Error loading products:', error);
+        console.error('Error stack:', error.stack);
+        clearProductsCache();
         
         const cachedFallback = getCachedProducts();
         if (cachedFallback) {
