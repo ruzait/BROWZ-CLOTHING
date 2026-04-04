@@ -21,6 +21,34 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+function handleWhatsAppClick(e) {
+    e.stopPropagation();
+    const btn = e.target.closest('.whatsapp-btn');
+    if (!btn) return;
+    
+    const id = parseInt(btn.dataset.id);
+    const product = products.find(p => p.id === id);
+    if (!product) return;
+    
+    const hasGlobalDiscount = CONFIG.GLOBAL_DISCOUNT > 0;
+    const effectiveDiscount = hasGlobalDiscount ? CONFIG.GLOBAL_DISCOUNT : (product.discount || 0);
+    const displayPrice = hasGlobalDiscount ? product.price * (1 - CONFIG.GLOBAL_DISCOUNT / 100) : product.price;
+    const originalPrice = product.oldPrice || product.price;
+    const showOldPrice = hasGlobalDiscount ? (originalPrice !== displayPrice) : (product.oldPrice && product.oldPrice !== product.price);
+    
+    let colorInfo = '';
+    if (product.colors && product.colors.length > 0) {
+        colorInfo = `\n*Color:* ${product.colors.join(', ')}`;
+    }
+    
+    const message = `*${CONFIG.SHOP_NAME}*\n━━━━━━━━━━━━━━━━━━━━━━\n\n*${escapeHtml(product.name)}*${colorInfo}\n\n*Price:* ${CONFIG.CURRENCY_SYMBOL}${formatPrice(displayPrice)}${showOldPrice ? `\n*Old Price:* ~~${CONFIG.CURRENCY_SYMBOL}${formatPrice(originalPrice)}~~\n*Discount:* -${effectiveDiscount}%` : ''}\n\n*Code:* ${escapeHtml(product.itemCode) || `${CONFIG.PRODUCT_CODE_PREFIX}-${String(product.id).padStart(4, '0')}`}${product.image ? `\n\n*Product Link:*\n${product.image}` : ''}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\nHi! I'm interested in this product. Is it available?`;
+    
+    const whatsappUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+}
+
+document.addEventListener('click', handleWhatsAppClick);
+
 function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -482,6 +510,9 @@ async function loadProductsFromExcel() {
             const imageUrl = item['Front Image'] || item.Image || item.image || item['Image URL'];
             const backImageUrl = item['Back Image'] || item.BackImage || item.backImage || item.Image || item.image;
             
+            const colorsRaw = item['Colors'] || item['colors'] || item['Color'] || item['color'] || item['COLORS'] || '';
+            const colors = colorsRaw ? String(colorsRaw).split(',').map(c => c.trim()).filter(c => c) : [];
+            
             validatedProducts.push({
                 id: index + 1,
                 originalIndex: index,
@@ -496,8 +527,13 @@ async function loadProductsFromExcel() {
                 description: item.Description || item.description || '',
                 brand: item.Brand || item.brand || '',
                 itemCode: item['Item Code'] || item.ItemCode || item.itemCode || item.Code || item.code || '',
-                timestamp: item.Timestamp || item.timestamp || ''
+                timestamp: item.Timestamp || item.timestamp || '',
+                colors: colors
             });
+            
+            if (colors.length > 0) {
+                console.log(`Product "${item['Product Name'] || item.name}" has colors:`, colors);
+            }
         });
         
         console.log('Validated products:', validatedProducts.length);
@@ -551,11 +587,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         preloader.classList.add('loaded');
     }, 1500);
 
-    if (products.length > 0) {
-        renderHomeProducts();
+    const productDetail = document.getElementById('productDetail');
+    if (productDetail) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
+        if (productId) {
+            renderProductDetail(productId);
+        }
     } else {
-        const grid = document.getElementById('productsGrid');
-        grid.innerHTML = '<p style="text-align:center;padding:40px;">No products available at the moment.</p>';
+        if (products.length > 0) {
+            renderHomeProducts();
+        } else {
+            const grid = document.getElementById('productsGrid');
+            if (grid) grid.innerHTML = '<p style="text-align:center;padding:40px;">No products available at the moment.</p>';
+        }
     }
     initDynamicContent();
 
@@ -784,6 +829,10 @@ function clearAllSearch() {
     renderProducts(currentFilter);
 }
 
+function renderCollectionsProducts(filter) {
+    renderProducts(filter);
+}
+
 function renderProducts(filter) {
     currentFilter = filter;
     const grid = document.getElementById('productsGrid');
@@ -853,10 +902,11 @@ function renderProducts(filter) {
         const priceStyles = getPriceStyles(effectiveDiscount);
         const imageHTML = getProductImageHTML(product, badgeHTML);
         card.innerHTML = `
+            <a href="product.html?id=${product.id}" class="product-link-overlay"></a>
             ${imageHTML}
             <div class="product-info">
                 <span class="product-category">${escapeHtml(categoryName)}${product.brand ? ` <i class="fas fa-tag brand-tag"></i> <span class="brand-name">${escapeHtml(product.brand)}</span>` : ''}</span>
-                <h3 class="product-title">${escapeHtml(product.name)}</h3>
+                <h3 class="product-title"><a href="product.html?id=${product.id}">${escapeHtml(product.name)}</a></h3>
                 <div class="product-price-box">
                     <span class="price-current" style="color:${priceStyles.priceColor}">${CONFIG.CURRENCY_SYMBOL}${formatPrice(displayPrice)}</span>
                     ${showOldPrice ? `<span class="price-old" style="color:${priceStyles.oldPriceColor}">${CONFIG.CURRENCY_SYMBOL}${formatPrice(originalPrice)}</span>` : ''}
@@ -871,32 +921,13 @@ function renderProducts(filter) {
 
         grid.appendChild(card);
     });
-
-    document.querySelectorAll('.whatsapp-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const id = parseInt(this.dataset.id);
-            const product = products.find(p => p.id === id);
-            if (product) {
-                const category = formatCategoryName(product.category);
-                const hasGlobalDiscount = CONFIG.GLOBAL_DISCOUNT > 0;
-                const effectiveDiscount = hasGlobalDiscount ? CONFIG.GLOBAL_DISCOUNT : (product.discount || 0);
-                const displayPrice = hasGlobalDiscount ? product.price * (1 - CONFIG.GLOBAL_DISCOUNT / 100) : product.price;
-                const originalPrice = product.oldPrice || product.price;
-                const showOldPrice = hasGlobalDiscount ? (originalPrice !== displayPrice) : (product.oldPrice && product.oldPrice !== product.price);
-                const discountText = hasGlobalDiscount ? `*Global OFFER:* ${effectiveDiscount}% OFF` : `*Was:* ${CONFIG.CURRENCY_SYMBOL}${formatPrice(originalPrice)} (${effectiveDiscount}% OFF)`;
-                const message = `*${CONFIG.SHOP_NAME}*\n━━━━━━━━━━━━━━━━━━━━━━\n\n*${escapeHtml(product.name)}*\n\n*Price:* ${CONFIG.CURRENCY_SYMBOL}${formatPrice(displayPrice)}${showOldPrice ? `\n*Old Price:* ~~${CONFIG.CURRENCY_SYMBOL}${formatPrice(originalPrice)}~~\n*Discount:* -${effectiveDiscount}%` : ''}\n\n*Code:* ${escapeHtml(product.itemCode) || `${CONFIG.PRODUCT_CODE_PREFIX}-${String(product.id).padStart(4, '0')}`}${product.image ? `\n\n*Product Link:*\n${product.image}` : ''}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\nHi! I'm interested in this product. Is it available?`;
-                const whatsappUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-                window.open(whatsappUrl, '_blank');
-            }
-        });
-    });
 }
 
 function renderHomeProducts() {
     const grid = document.getElementById('productsGrid');
     grid.innerHTML = '';
 
-    const homeProducts = products.slice(0, 20);
+    const homeProducts = products.slice(0, 10);
 
     homeProducts.forEach((product, index) => {
         const card = document.createElement('div');
@@ -918,10 +949,11 @@ function renderHomeProducts() {
         const priceStyles = getPriceStyles(effectiveDiscount);
         const imageHTML = getProductImageHTML(product, badgeHTML);
         card.innerHTML = `
+            <a href="product.html?id=${product.id}" class="product-link-overlay"></a>
             ${imageHTML}
             <div class="product-info">
                 <span class="product-category">${escapeHtml(categoryName)}${product.brand ? ` <i class="fas fa-tag brand-tag"></i> <span class="brand-name">${escapeHtml(product.brand)}</span>` : ''}</span>
-                <h3 class="product-title">${escapeHtml(product.name)}</h3>
+                <h3 class="product-title"><a href="product.html?id=${product.id}">${escapeHtml(product.name)}</a></h3>
                 <div class="product-price-box">
                     <span class="price-current" style="color:${priceStyles.priceColor}">${CONFIG.CURRENCY_SYMBOL}${formatPrice(displayPrice)}</span>
                     ${showOldPrice ? `<span class="price-old" style="color:${priceStyles.oldPriceColor}">${CONFIG.CURRENCY_SYMBOL}${formatPrice(originalPrice)}</span>` : ''}
@@ -936,25 +968,222 @@ function renderHomeProducts() {
 
         grid.appendChild(card);
     });
+}
 
-    document.querySelectorAll('.whatsapp-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const id = parseInt(this.dataset.id);
-            const product = products.find(p => p.id === id);
-            if (product) {
-                const category = formatCategoryName(product.category);
-                const hasGlobalDiscount = CONFIG.GLOBAL_DISCOUNT > 0;
-                const effectiveDiscount = hasGlobalDiscount ? CONFIG.GLOBAL_DISCOUNT : (product.discount || 0);
-                const displayPrice = hasGlobalDiscount ? product.price * (1 - CONFIG.GLOBAL_DISCOUNT / 100) : product.price;
-                const originalPrice = product.oldPrice || product.price;
-                const showOldPrice = hasGlobalDiscount ? (originalPrice !== displayPrice) : (product.oldPrice && product.oldPrice !== product.price);
-                const discountText = hasGlobalDiscount ? `*Global OFFER:* ${effectiveDiscount}% OFF` : `*Was:* ${CONFIG.CURRENCY_SYMBOL}${formatPrice(originalPrice)} (${effectiveDiscount}% OFF)`;
-                const message = `*${CONFIG.SHOP_NAME}*\n━━━━━━━━━━━━━━━━━━━━━━\n\n*${escapeHtml(product.name)}*\n\n*Price:* ${CONFIG.CURRENCY_SYMBOL}${formatPrice(displayPrice)}${showOldPrice ? `\n*Old Price:* ~~${CONFIG.CURRENCY_SYMBOL}${formatPrice(originalPrice)}~~\n*Discount:* -${effectiveDiscount}%` : ''}\n\n*Code:* ${escapeHtml(product.itemCode) || `${CONFIG.PRODUCT_CODE_PREFIX}-${String(product.id).padStart(4, '0')}`}${product.image ? `\n\n*Product Link:*\n${product.image}` : ''}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\nHi! I'm interested in this product. Is it available?`;
-                const whatsappUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-                window.open(whatsappUrl, '_blank');
-            }
-        });
+function renderProductDetail(productId) {
+    const product = products.find(p => p.id === parseInt(productId));
+    if (!product) {
+        document.getElementById('productDetail').innerHTML = '<div class="product-not-found"><h2>Product not found</h2><a href="index.html" class="btn-back">Back to Home</a></div>';
+        return;
+    }
+    
+    const hasGlobalDiscount = CONFIG.GLOBAL_DISCOUNT > 0;
+    const effectiveDiscount = hasGlobalDiscount ? CONFIG.GLOBAL_DISCOUNT : (product.discount || 0);
+    const displayPrice = hasGlobalDiscount ? product.price * (1 - CONFIG.GLOBAL_DISCOUNT / 100) : product.price;
+    const originalPrice = product.oldPrice || product.price;
+    const showOldPrice = hasGlobalDiscount ? (originalPrice !== displayPrice) : (product.oldPrice && product.oldPrice !== product.price);
+    const priceStyles = getPriceStyles(effectiveDiscount);
+    const categoryName = formatCategoryName(product.category);
+    const itemCode = product.itemCode || `${CONFIG.PRODUCT_CODE_PREFIX}-${String(product.id).padStart(4, '0')}`;
+    
+    let images = [];
+    if (product.image) images.push({ src: product.image, type: 'front' });
+    if (product.backImage && product.backImage !== product.image) images.push({ src: product.backImage, type: 'back' });
+    
+    let colorSwatches = '';
+    if (product.colors && product.colors.length > 0) {
+        colorSwatches = `
+            <div class="product-colors">
+                <div class="color-label">Available Colors:</div>
+                <div class="color-swatches">
+                    ${product.colors.map(color => `<span class="color-swatch">${escapeHtml(color)}</span>`).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    const whatsappMessage = `*${CONFIG.SHOP_NAME}*\n━━━━━━━━━━━━━━━━━━━━━━\n\n*${escapeHtml(product.name)}*\n${product.colors && product.colors.length > 0 ? `\n*Color:* ${product.colors.join(', ')}` : ''}\n\n*Price:* ${CONFIG.CURRENCY_SYMBOL}${formatPrice(displayPrice)}${showOldPrice ? `\n*Old Price:* ~~${CONFIG.CURRENCY_SYMBOL}${formatPrice(originalPrice)}~~\n*Discount:* -${effectiveDiscount}%` : ''}\n\n*Code:* ${escapeHtml(itemCode)}${product.image ? `\n\n*Product Link:*\n${product.image}` : ''}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\nHi! I'm interested in this product. Is it available?`;
+    const whatsappUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
+    
+    const productDetailHTML = `
+        <div class="breadcrumb">
+            <a href="index.html">Home</a>
+            <span>/</span>
+            <a href="collections.html">Collections</a>
+            <span>/</span>
+            <span>${escapeHtml(product.name)}</span>
+        </div>
+        
+        <div class="product-detail-container">
+            <div class="product-gallery">
+                <div class="gallery-main">
+                    ${images.length > 0 ? `<img src="${images[0].src}" alt="${escapeHtml(product.name)}" id="mainImage">` : '<div class="no-image">No Image Available</div>'}
+                    ${images.length === 2 ? `<button class="gallery-toggle" onclick="toggleGalleryImage()"><i class="fas fa-sync-alt"></i> View Back</button>` : ''}
+                </div>
+                ${images.length > 1 ? `
+                <div class="gallery-nav">
+                    <button class="gallery-btn prev" onclick="changeGalleryImage(-1)"><i class="fas fa-chevron-left"></i></button>
+                    <div class="gallery-indicators">
+                        ${images.map((img, i) => `<span class="indicator ${i === 0 ? 'active' : ''}" onclick="setGalleryImage(${i})"></span>`).join('')}
+                    </div>
+                    <button class="gallery-btn next" onclick="changeGalleryImage(1)"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                ` : ''}
+            </div>
+            
+            <div class="product-info-detail">
+                ${product.badge ? `<span class="product-badge" style="background:${getBadgeStyle(product.badge, product.category, 0).split('style="')[1]?.replace('background:', '').replace('"', '') || '#666'}">${escapeHtml(product.badge)}</span>` : ''}
+                
+                <span class="product-category-detail">${escapeHtml(categoryName)}${product.brand ? ` - ${escapeHtml(product.brand)}` : ''}</span>
+                <h1 class="product-title-detail">${escapeHtml(product.name)}</h1>
+                
+                <div class="product-price-detail">
+                    <span class="price-current-detail" style="color:${priceStyles.priceColor}">${CONFIG.CURRENCY_SYMBOL}${formatPrice(displayPrice)}</span>
+                    ${showOldPrice ? `<span class="price-old-detail" style="color:${priceStyles.oldPriceColor}">${CONFIG.CURRENCY_SYMBOL}${formatPrice(originalPrice)}</span>` : ''}
+                    ${effectiveDiscount > 0 ? `<span class="discount-tag-detail" style="background:${priceStyles.discountBadgeBg}">-${effectiveDiscount}% OFF</span>` : ''}
+                </div>
+                
+                <div class="product-code">Code: <strong>${escapeHtml(itemCode)}</strong></div>
+                
+                ${colorSwatches}
+                
+                ${product.description ? `
+                <div class="product-description">
+                    <h3>Description</h3>
+                    <p>${escapeHtml(product.description)}</p>
+                </div>
+                ` : ''}
+                
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <a href="${whatsappUrl}" class="btn-order-whatsapp" target="_blank">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>Order via WhatsApp</span>
+                    </a>
+                    
+                    <a href="collections.html" class="btn-back-products" style="padding: 16px 24px; border-radius: 12px; background: var(--light-gray); color: var(--text-color); font-weight: 600; font-size: 14px;">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Back to Products</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('productDetail').innerHTML = productDetailHTML;
+    
+    renderRelatedProducts(product);
+}
+
+function renderRelatedProducts(currentProduct) {
+    const relatedContainer = document.getElementById('relatedProducts');
+    if (!relatedContainer) return;
+    
+    const relatedProducts = products
+        .filter(p => p.category === currentProduct.category && p.id !== currentProduct.id)
+        .sort((a, b) => {
+            if (!a.timestamp && !b.timestamp) return 0;
+            if (!a.timestamp) return 1;
+            if (!b.timestamp) return -1;
+            return new Date(b.timestamp) - new Date(a.timestamp);
+        })
+        .slice(0, 10);
+    
+    if (relatedProducts.length === 0) {
+        relatedContainer.style.display = 'none';
+        return;
+    }
+    
+    const categoryName = formatCategoryName(currentProduct.category);
+    
+    let relatedHTML = `
+        <section class="showcase related-section">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-tag">You May Also Like</span>
+                    <h2 class="section-title">More from ${escapeHtml(categoryName)}</h2>
+                </div>
+                <div class="products-grid">
+    `;
+    
+    relatedProducts.forEach(product => {
+        const hasGlobalDiscount = CONFIG.GLOBAL_DISCOUNT > 0;
+        const effectiveDiscount = hasGlobalDiscount ? CONFIG.GLOBAL_DISCOUNT : (product.discount || 0);
+        const displayPrice = hasGlobalDiscount ? product.price * (1 - CONFIG.GLOBAL_DISCOUNT / 100) : product.price;
+        const originalPrice = product.oldPrice || product.price;
+        const showOldPrice = hasGlobalDiscount ? (originalPrice !== displayPrice) : (product.oldPrice && product.oldPrice !== product.price);
+        const priceStyles = getPriceStyles(effectiveDiscount);
+        const prodCategoryName = formatCategoryName(product.category);
+        
+        let badgeHTML = '';
+        if (product.badge) {
+            const badgeStyle = getBadgeStyle(product.badge, product.category, 0);
+            badgeHTML = `<span class="badge" ${badgeStyle}>${escapeHtml(product.badge)}</span>`;
+        }
+        
+        const imageHTML = getProductImageHTML(product, badgeHTML);
+        
+        relatedHTML += `
+            <div class="product-card">
+                <a href="product.html?id=${product.id}" class="product-link-overlay"></a>
+                ${imageHTML}
+                <div class="product-info">
+                    <span class="product-category">${escapeHtml(prodCategoryName)}${product.brand ? ` <i class="fas fa-tag brand-tag"></i> <span class="brand-name">${escapeHtml(product.brand)}</span>` : ''}</span>
+                    <h3 class="product-title"><a href="product.html?id=${product.id}">${escapeHtml(product.name)}</a></h3>
+                    <div class="product-price-box">
+                        <span class="price-current" style="color:${priceStyles.priceColor}">${CONFIG.CURRENCY_SYMBOL}${formatPrice(displayPrice)}</span>
+                        ${showOldPrice ? `<span class="price-old" style="color:${priceStyles.oldPriceColor}">${CONFIG.CURRENCY_SYMBOL}${formatPrice(originalPrice)}</span>` : ''}
+                        ${effectiveDiscount > 0 ? `<span class="discount-tag" style="background:${priceStyles.discountBadgeBg}">-${effectiveDiscount}%</span>` : ''}
+                    </div>
+                    <button class="product-btn whatsapp-btn" data-id="${product.id}">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>Order via WhatsApp</span>
+                    </button>
+                </div>
+            </div>
+        `;
     });
+    
+    relatedHTML += `
+                </div>
+            </div>
+        </section>
+    `;
+    
+    relatedContainer.innerHTML = relatedHTML;
+}
+
+let currentGalleryIndex = 0;
+
+function setGalleryImage(index) {
+    const mainImage = document.getElementById('mainImage');
+    const productId = new URLSearchParams(window.location.search).get('id');
+    const product = products.find(p => p.id === parseInt(productId));
+    if (!product) return;
+    
+    let images = [];
+    if (product.image) images.push(product.image);
+    if (product.backImage && product.backImage !== product.image) images.push(product.backImage);
+    
+    if (images[index]) {
+        mainImage.src = images[index];
+        document.querySelectorAll('.indicator').forEach((ind, i) => {
+            ind.classList.toggle('active', i === index);
+        });
+        currentGalleryIndex = index;
+    }
+}
+
+function changeGalleryImage(direction) {
+    const productId = new URLSearchParams(window.location.search).get('id');
+    const product = products.find(p => p.id === parseInt(productId));
+    if (!product) return;
+    
+    let images = [];
+    if (product.image) images.push(product.image);
+    if (product.backImage && product.backImage !== product.image) images.push(product.backImage);
+    
+    currentGalleryIndex = (currentGalleryIndex + direction + images.length) % images.length;
+    setGalleryImage(currentGalleryIndex);
 }
 
 function initFilters() {
@@ -1012,6 +1241,7 @@ function initHeroSlider() {
     }, 5000);
 
     function showSlide(index) {
+        if (!slides[index] || !dots[index]) return;
         slides.forEach((slide, i) => {
             slide.classList.remove('active');
             dots[i].classList.remove('active');

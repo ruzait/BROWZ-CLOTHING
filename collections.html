@@ -357,10 +357,11 @@
                 const imageHTML = getProductImageHTML(product, badgeHTML, collectionsEscapeHtml);
                 
                 card.innerHTML = `
+                    <a href="product.html?id=${product.id}" class="product-link-overlay"></a>
                     ${imageHTML}
                     <div class="product-info">
                         <span class="product-category">${collectionsEscapeHtml(categoryName)}${product.brand ? ` <i class="fas fa-tag brand-tag"></i> <span class="brand-name">${collectionsEscapeHtml(product.brand)}</span>` : ''}</span>
-                        <h3 class="product-title">${collectionsEscapeHtml(product.name)}</h3>
+                        <h3 class="product-title"><a href="product.html?id=${product.id}">${collectionsEscapeHtml(product.name)}</a></h3>
                         <div class="product-price-box">
                             <span class="price-current" style="color:${priceStyles.priceColor}">${CONFIG.CURRENCY_SYMBOL}${formatPrice(displayPrice)}</span>
                             ${showOldPrice ? `<span class="price-old" style="color:${priceStyles.oldPriceColor}">${CONFIG.CURRENCY_SYMBOL}${formatPrice(originalPrice)}</span>` : ''}

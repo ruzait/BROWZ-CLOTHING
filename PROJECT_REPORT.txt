@@ -1,6 +1,6 @@
 ================================================================================
-                      PROJECT REPORT: MR. NILA TEX WEBSITE
-                           Updated: March 30, 2026
+                       PROJECT REPORT: MR. NILA TEX WEBSITE
+                            Updated: April 5, 2026
 ================================================================================
 
 1. PROJECT OVERVIEW
@@ -9,9 +9,9 @@ Mr. Nila Tex is a premium clothing and textile showroom website based in
 Addalaichenai, Sri Lanka. The website showcases products for men, women, 
 kids, and offers quality fabrics and textiles. Features include product 
 browsing, category filtering, price range slider, search functionality, 
-and direct WhatsApp ordering.
+direct WhatsApp ordering, and product detail pages.
 
-Website URL: https://mr-nilatex.netlify.app
+Website URL: https://browzclothing.netlify.app
 
 2. WEBSITE STRUCTURE
 --------------------------------------------------------------------------------
@@ -19,9 +19,9 @@ Pages:
 - index.html (Home Page)
   - Hero section with slider
   - Features bar
-  - Categories section
-  - Products showcase (20 newest products only - no filters)
+  - Categories section (centered)
   - Offers/Ramadan sale section with countdown timer
+  - Products showcase (10 newest products only - no filters)
   - About section
   - Testimonials
   - Contact section with form & map
@@ -35,6 +35,17 @@ Pages:
   - Search functionality
   - WhatsApp ordering per product
   - Full product grid display
+  - Clickable product cards
+
+- product.html (Product Detail Page)
+  - Page header with breadcrumb
+  - Large product image gallery
+  - Product info (name, price, discount, code)
+  - Color swatches display
+  - Description section
+  - WhatsApp order button
+  - Related products section (same category, latest 10)
+  - WhatsApp floating button
 
 3. TECHNOLOGIES USED
 --------------------------------------------------------------------------------
@@ -64,6 +75,7 @@ Product Management:
 - Client-side caching for performance
 - Sorting by newest (timestamp)
 - XSS protection for all user-generated content
+- Colors support (comma-separated in "Colors" column)
 
 Product Display:
 - Smart image handling:
@@ -73,10 +85,26 @@ Product Display:
 - Lazy loading images
 - Category badges with dynamic colors
 - Price display with discount calculation
+- Color swatches display on product detail page
 - WhatsApp order button per product
 
+Clickable Product Cards:
+- Entire card is clickable (links to product.html?id=X)
+- Product title links to product detail page
+- WhatsApp button works independently
+- Event delegation for WhatsApp click handling
+
+Product Detail Page:
+- Large image gallery with navigation
+- Product info panel with all details
+- Color swatches display
+- Description section
+- WhatsApp order button
+- Related products (same category, latest 10)
+- Breadcrumb navigation
+
 Home Page Specific:
-- Shows only 20 newest products (no filters)
+- Shows only 10 newest products (no filters)
 - Clean showcase section with "View All Collections" CTA
 
 Collections Page:
@@ -85,36 +113,16 @@ Collections Page:
 - Price range slider (dual-handle, draggable)
 - Real-time search
 - Button states: Loading, All Loaded, Load More
-
-Price Range Slider Features:
-- Dual-handle slider for min/max price selection
-- Dynamic price range based on product prices
-- Draggable thumbs with mouse and touch support
-- Price values shown above thumbs on hover
-- Visual gold gradient range indicator
-- Minimum gap enforcement (Rs.100 between min/max)
-- Responsive design for all devices
-
-Navigation:
-- Fixed transparent navbar (becomes white on scroll)
-- Mobile responsive hamburger menu
-- Search overlay
-- WhatsApp floating button
-- Back to top button
-
-Countdown Timer:
-- Validates date format before display
-- Shows "Offer Ended" message when expired
-- Displays offer name from CONFIG
-- Fallback for invalid dates
+- Clickable product cards
 
 5. FILE STRUCTURE
 --------------------------------------------------------------------------------
 Root Directory:
-- index.html              - Main home page (617 lines)
-- collections.html        - Collections page with pagination (597 lines)
-- main.js               - Main JavaScript file (1251 lines)
-- styles.css            - Main stylesheet (4739+ lines)
+- index.html              - Main home page
+- collections.html        - Collections page with pagination
+- product.html            - Product detail page (NEW)
+- main.js               - Main JavaScript file (~1500 lines)
+- styles.css            - Main stylesheet (~5200 lines)
 - favicon.svg           - Website favicon
 - sitemap.xml           - XML sitemap
 - robots.txt            - Search engine robots rules
@@ -134,7 +142,8 @@ Google Sheets Integration:
 - Sheet ID: 1yr2_FNh55z2ryLj8j6NuB5E1aA8dk6acSZXgra6Fzms
 - Cache Duration: 5 minutes
 - Expected columns: Product Name, Category, Price, Old Price, Discount %, 
-  Image URL, Back Image URL, Badge, Description, Brand, Item Code, Timestamp
+  Image URL, Back Image URL, Badge, Description, Brand, Item Code, 
+  Timestamp, Colors (NEW)
 
 Countdown Configuration:
 - COUNTDOWN_END_DATE: '2026-04-30T23:59:59'
@@ -145,7 +154,7 @@ Product Categories:
 - men, women, kids, fabric, textiles, etc. (dynamically from sheet)
 
 Pagination Settings:
-- Home page: 20 products (newest only, no filters)
+- Home page: 10 products (newest only, no filters)
 - Collections page: 100 products per load with Load More button
 
 7. DISCOUNT SYSTEM LOGIC
@@ -216,8 +225,65 @@ Features:
 - Triggers product filter on release
 - Responsive breakpoints for all device sizes
 
-11. RECENT UPDATES & FIXES
+11. EVENT HANDLING SYSTEM
 --------------------------------------------------------------------------------
+WhatsApp Click Handling:
+- Uses event delegation (document-level click listener)
+- Single handleWhatsAppClick() function handles all WhatsApp buttons
+- Event propagation stopped to prevent card click
+- Supports colors in WhatsApp message
+
+Product Card Clicks:
+- product-link-overlay covers entire card
+- Clickable title links to product detail
+- WhatsApp button works independently
+
+12. RECENT UPDATES & FIXES
+--------------------------------------------------------------------------------
+April 5, 2026:
+
+Product Detail Page (product.html):
+- Created new product detail page
+- Page header with breadcrumb navigation
+- Large product image gallery with navigation
+- Product info panel (name, price, discount, code)
+- Color swatches display
+- WhatsApp order button
+- Related products section (same category, latest 10)
+
+Colors Support:
+- Added "Colors" column parsing in CSV
+- Supports comma-separated color names
+- Displays color swatches on product detail page
+- Includes colors in WhatsApp order message
+
+Clickable Product Cards:
+- Added product-link-overlay for entire card click
+- Title links to product detail page
+- WhatsApp button uses event delegation
+- StopPropagation on WhatsApp click
+
+Related Products Section:
+- Shows latest 10 products from same category
+- Uses same products-grid structure as collections
+- Section header with category name
+- No background color (transparent)
+- No "View All" button
+
+Code Cleanup:
+- Unified WhatsApp click handling (event delegation)
+- Removed duplicate WhatsApp event listeners
+- Fixed hero slider error (undefined classList)
+- Removed debug console.log statements
+
+Categories Grid:
+- Centered using flexbox
+- Bootstrap-style responsive breakpoints:
+  * <576px: 1 column
+  * ≥576px: 2 columns
+  * ≥768px: 3 columns
+  * ≥992px: 4 columns
+
 March 30, 2026:
 
 Price Range Slider:
@@ -226,34 +292,34 @@ Price Range Slider:
 - Price values display above thumbs on hover
 - Dynamic price range from product data
 - Responsive CSS for all device sizes
-- Fixed duplicate slider issue
-- Clean design without container box
 
 Home Page Optimization:
-- Limited home page to show only 20 newest products
+- Limited home page to show only 10 newest products
 - Removed filter container from home page
-- Created dedicated renderHomeProducts() function
-- Home page now shows "Featured Collections" (20 products) with "View All" CTA
 
-Image Handling Improvements:
-- Added getProductImageHTML() helper function (main.js:310-333)
-- Smart flip detection (only enables when both images exist)
-- Automatic placeholder for missing/broken images
-- Added .product-image-single CSS class for single image display
-- Updated all 3 render locations to use new helper
-
-Code Cleanup:
-- Removed unused sliderMin/sliderMax variables
-- Fixed duplicate CSS rules
-- Cleaned up responsive breakpoints
-
-12. KNOWN ISSUES / TODOs
+13. GOOGLE SHEETS COLUMN REQUIREMENTS
 --------------------------------------------------------------------------------
-- CSS has multiple @media blocks at same breakpoint (organization, not bug)
-- Some unused CSS classes remain (minimal impact)
-- Products load from Google Sheets (requires internet)
+Required Columns:
+- Product Name / Name / name / Product
+- Category / category
+- Price / price
+- Old Price / OldPrice / oldPrice
+- Discount % / Discount / discount
+- Front Image / Image / image / Image URL
+- Back Image / BackImage / backImage
+- Badge / badge
+- Description / description
+- Brand / brand
+- Item Code / ItemCode / itemCode / Code / code
+- Timestamp / timestamp
+- Colors / colors (NEW - comma-separated names)
 
-13. DEPLOYMENT
+14. KNOWN ISSUES / TODOs
+--------------------------------------------------------------------------------
+- Products load from Google Sheets (requires internet)
+- Some console.log statements remain for debugging
+
+15. DEPLOYMENT
 --------------------------------------------------------------------------------
 Platform: Netlify
 Build Command: (static site)
@@ -329,7 +395,7 @@ and subtle textures add warmth and premium feel.
 ### Technical Implementation
 
 #### Architecture
-- Two HTML files (index.html, collections.html)
+- Three HTML files (index.html, collections.html, product.html)
 - External CSS file with CSS custom properties
 - Vanilla JavaScript (ES6+) for interactivity
 - No build tools required
