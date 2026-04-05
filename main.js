@@ -60,15 +60,15 @@ function isValidPhone(phone) {
 }
 
 const CONFIG = {
-    SHEET_ID: '1yr2_FNh55z2ryLj8j6NuB5E1aA8dk6acSZXgra6Fzms',
-    OFFERS_SHEET_GID: '461927744',
+    SHEET_ID: '2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw',
+    OFFERS_SHEET_GID: '291050963',
     WHATSAPP_NUMBER: '94757034999',
     SHOP_START_YEAR: 2022,
     SHOP_NAME: 'Browz Clothing',
     SHOP_TAGLINE: 'Premium Clothing & Textiles',
     CURRENCY: 'Rs.',
     CURRENCY_SYMBOL: 'Rs. ',
-    PRODUCT_CODE_PREFIX: 'BRC',
+    PRODUCT_CODE_PREFIX: 'BC',
     EXPERIENCE_SUFFIX: 'Years',
     SHOW_DISCOUNT_PERCENT: true,
     SHOW_BADGE: true,
@@ -121,7 +121,7 @@ async function loadOffersFromExcel() {
     }
 
     try {
-        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFEZ0NWHMAIaKg8JQnQEG6gBtqr1aIz0UMpCnCwPY2_m_og_FMDPY_lkre0JSe2BUlfvVgWcKMfXvD/pub?gid=461927744&single=true&output=csv';
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw/pub?gid=291050963&single=true&output=csv';
         
         const response = await fetch(csvUrl, { cache: 'no-cache' });
         if (!response.ok) throw new Error('Failed to fetch offers');
@@ -752,7 +752,7 @@ async function loadProductsFromExcel() {
     console.log('Sheet ID:', CONFIG.SHEET_ID);
     
     try {
-        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFEZ0NWHMAIaKg8JQnQEG6gBtqr1aIz0UMpCnCwPY2_m_og_FMDPY_lkre0JSe2BUlfvVgWcKMfXvD/pub?gid=685618677&single=true&output=csv';
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw/pub?gid=1503251048&single=true&output=csv';
         
         console.log('Fetching:', csvUrl);
         

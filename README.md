@@ -152,28 +152,28 @@ Mr.Nila-Tex/
 ### Configuration (main.js)
 ```javascript
 const CONFIG = {
-    SHEET_ID: 'your-sheet-id',
-    OFFERS_SHEET_GID: 'offers-sheet-gid',
-    WHATSAPP_NUMBER: '94700000000',
-    SHOP_NAME: 'Your Shop Name',
+    SHEET_ID: '2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw',
+    OFFERS_SHEET_GID: '291050963',
+    WHATSAPP_NUMBER: '94757034999',
+    SHOP_NAME: 'Browz Clothing',
     SHOP_START_YEAR: 2022,
     CURRENCY_SYMBOL: 'Rs. ',
+    PRODUCT_CODE_PREFIX: 'BC',
     // ... more options
 };
 ```
 
 ### Adding Products
-1. Open Google Sheet
+1. Open your Products Google Sheet
 2. Add product row with required columns
-3. Publish sheet to web (File → Share → Publish to web)
-4. Refresh website
+3. Ensure the sheet is published to web
+4. Refresh website - changes appear automatically!
 
 ### Adding Offers
-1. Open Google Sheet
-2. Go to `offerssheet` tab
-3. Add offer row with all columns
-4. Set `is_active` to "Yes"
-5. Refresh website - changes appear automatically!
+1. Open your Offers Google Sheet
+2. Add offer row with all columns
+3. Set `is_active` to "Yes"
+4. Refresh website - changes appear automatically!
 
 ---
 
@@ -196,6 +196,6 @@ All rights reserved. Mr. Nila Tex / Browz Clothing
 ## Contact
 
 - **Phone:** +94 75 703 4999
-- **Email:** info@browzclothing.lk
+- **Email:** Browzclothing@gmail.com
 - **Location:** 144 Union Road, Addalaichenai, Sri Lanka
 - **WhatsApp:** [Chat with us](https://wa.me/94757034999)
