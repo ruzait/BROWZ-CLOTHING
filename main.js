@@ -61,12 +61,8 @@ function isValidPhone(phone) {
 
 const CONFIG = {
     SHEET_ID: '1yr2_FNh55z2ryLj8j6NuB5E1aA8dk6acSZXgra6Fzms',
+    OFFERS_SHEET_GID: '461927744',
     WHATSAPP_NUMBER: '94757034999',
-    COUNTDOWN_END_DATE: '2026-04-30T23:59:59',
-    CURRENT_OFFER: {
-        name: 'Ramadan Special Sale',
-        discount: '30% OFF'
-    },
     SHOP_START_YEAR: 2022,
     SHOP_NAME: 'Browz Clothing',
     SHOP_TAGLINE: 'Premium Clothing & Textiles',
@@ -81,6 +77,8 @@ const CONFIG = {
     CACHE_TTL: 5 * 60 * 1000,
     CACHE_KEY: 'browzclothing_products',
     CACHE_TIME_KEY: 'browzclothing_products_time',
+    OFFERS_CACHE_KEY: 'browzclothing_offers',
+    OFFERS_CACHE_TIME_KEY: 'browzclothing_offers_time',
     PRICE_COLORS: {
         DEFAULT: '#111111',
         OLD_PRICE: '#888888',
@@ -96,6 +94,12 @@ const CONFIG = {
     }
 };
 
+let offers = [];
+let currentOfferIndex = 0;
+let offerCarouselInterval = null;
+let countdownIntervalId = null;
+let heroSliderInterval = null;
+
 const CATEGORY_COLORS = {
     men: { bg: '#3498db', text: '#ffffff' },
     women: { bg: '#e91e63', text: '#ffffff' },
@@ -103,6 +107,309 @@ const CATEGORY_COLORS = {
     fabric: { bg: '#c9a959', text: '#1a1a1a' },
     textiles: { bg: '#c9a959', text: '#1a1a1a' }
 };
+
+async function loadOffersFromExcel() {
+    const cachedTime = sessionStorage.getItem(CONFIG.OFFERS_CACHE_TIME_KEY);
+    const now = Date.now();
+    
+    if (cachedTime && (now - parseInt(cachedTime)) < CONFIG.CACHE_TTL) {
+        const cached = sessionStorage.getItem(CONFIG.OFFERS_CACHE_KEY);
+        if (cached) {
+            offers = JSON.parse(cached);
+            return offers;
+        }
+    }
+
+    try {
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFEZ0NWHMAIaKg8JQnQEG6gBtqr1aIz0UMpCnCwPY2_m_og_FMDPY_lkre0JSe2BUlfvVgWcKMfXvD/pub?gid=461927744&single=true&output=csv';
+        
+        const response = await fetch(csvUrl, { cache: 'no-cache' });
+        if (!response.ok) throw new Error('Failed to fetch offers');
+        
+        const csvText = await response.text();
+        if (!csvText || csvText.trim() === '') throw new Error('Empty response');
+        
+        const rows = Papa.parse(csvText, {
+            skipEmptyLines: true,
+            transformHeader: (header) => header.trim().replace(/^["']|["']$/g, '')
+        }).data;
+        
+        if (rows.length < 2) throw new Error('No data found');
+        
+        const headers = rows[0].map(h => (h || '').trim().toLowerCase());
+        
+        offers = rows.slice(1).filter(row => {
+            if (!row.length) return false;
+            const rowData = {};
+            headers.forEach((header, i) => {
+                rowData[header] = (row[i] || '').trim();
+            });
+            
+            const isActiveRaw = (rowData['is_active'] || '').toLowerCase();
+            const isActive = isActiveRaw === 'yes';
+            if (!isActive) return false;
+            
+            const bgUrl = rowData['background_image'] || '';
+            if (!bgUrl || bgUrl.length < 10) return false;
+            
+            const dateStr = rowData['end_date'] || '';
+            let endDate = new Date(dateStr);
+
+            if (isNaN(endDate.getTime())) {
+                const parts = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})/);
+                if (parts) {
+                    endDate = new Date(parts[3], parts[1] - 1, parts[2], parts[4], parts[5], parts[6]);
+                }
+            }
+
+            if (isNaN(endDate.getTime())) return false;
+            
+            return true;
+        }).map((row, index) => {
+            const rowData = {};
+            headers.forEach((header, i) => {
+                rowData[header] = (row[i] || '').trim();
+            });
+            return {
+                id: index + 1,
+                backgroundImage: rowData['background_image'] || '',
+                badgeText: rowData['badge_text'] || '',
+                title: rowData['title'] || '',
+                subtitle: rowData['subtitle'] || '',
+                endDate: rowData['end_date'] || '',
+                isActive: true
+            };
+        }).sort((a, b) => new Date(a.endDate) - new Date(b.endDate));
+        
+        sessionStorage.setItem(CONFIG.OFFERS_CACHE_KEY, JSON.stringify(offers));
+        sessionStorage.setItem(CONFIG.OFFERS_CACHE_TIME_KEY, now.toString());
+        
+        return offers;
+    } catch (error) {
+        console.error('Error loading offers:', error);
+        return [];
+    }
+}
+
+function initOffersCarousel() {
+    if (offers.length === 0) {
+        const offersSection = document.querySelector('.offers');
+        if (offersSection) {
+            offersSection.style.display = 'none';
+        }
+        return;
+    }
+
+    const prevBtn = document.querySelector('.carousel-prev');
+    const nextBtn = document.querySelector('.carousel-next');
+    const dotsContainer = document.getElementById('carouselDots');
+
+    if (offers.length === 1) {
+        if (prevBtn) prevBtn.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'none';
+        if (dotsContainer) dotsContainer.style.display = 'none';
+    } else {
+        if (prevBtn) prevBtn.style.display = 'flex';
+        if (nextBtn) nextBtn.style.display = 'flex';
+        
+        if (dotsContainer) {
+            dotsContainer.innerHTML = offers.map((_, i) => 
+                `<span class="carousel-dot ${i === 0 ? 'active' : ''}" onclick="showOffer(${i})"></span>`
+            ).join('');
+            dotsContainer.style.display = 'flex';
+        }
+    }
+
+    initOffersSwipe();
+    renderCurrentOffer();
+    startOfferAutoAdvance();
+}
+
+function initOffersSwipe() {
+    const slidesContainer = document.querySelector('.offers-slides');
+    if (!slidesContainer) return;
+    
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const minSwipeDistance = 50;
+    
+    slidesContainer.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    
+    slidesContainer.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }, { passive: true });
+    
+    function handleSwipe() {
+        const swipeDistance = touchEndX - touchStartX;
+        
+        if (swipeDistance > minSwipeDistance) {
+            prevOffer();
+        } else if (swipeDistance < -minSwipeDistance) {
+            nextOffer();
+        }
+    }
+}
+
+function renderCurrentOffer() {
+    const offer = offers[currentOfferIndex];
+    const container = document.querySelector('.offers-container');
+    if (!container || !offer) return;
+
+    const badgeEl = container.querySelector('.offers-badge .badge-text');
+    const titleEl = container.querySelector('.offers-title');
+    const subtitleEl = container.querySelector('.offers-subtitle');
+    const countdownNoteEl = container.querySelector('.countdown-note');
+    const bgImg = document.querySelector('.offers-bg img');
+    const ctaBtn = container.querySelector('.btn');
+
+    if (badgeEl) badgeEl.textContent = offer.badgeText || '';
+    if (titleEl) titleEl.textContent = offer.title || '';
+    if (subtitleEl) subtitleEl.innerHTML = offer.subtitle || '';
+    if (countdownNoteEl) countdownNoteEl.textContent = 'Limited time offer - Don\'t miss out!';
+    if (bgImg) bgImg.src = offer.backgroundImage || '';
+    if (ctaBtn) {
+        ctaBtn.innerHTML = '<span>Visit Showroom</span><i class="fas fa-store"></i>';
+    }
+
+    const dots = document.querySelectorAll('.carousel-dot');
+    dots.forEach((dot, i) => dot.classList.toggle('active', i === currentOfferIndex));
+
+    resetOfferTimer();
+}
+
+function showOffer(index) {
+    if (offers.length === 0 || index < 0 || index >= offers.length) return;
+    
+    currentOfferIndex = index;
+    renderCurrentOffer();
+    
+    if (offerCarouselInterval) {
+        clearInterval(offerCarouselInterval);
+    }
+    startOfferAutoAdvance();
+}
+
+function nextOffer() {
+    if (offers.length <= 1) return;
+    const nextIndex = (currentOfferIndex + 1) % offers.length;
+    showOffer(nextIndex);
+}
+
+function prevOffer() {
+    if (offers.length <= 1) return;
+    const prevIndex = (currentOfferIndex - 1 + offers.length) % offers.length;
+    showOffer(prevIndex);
+}
+
+function startOfferAutoAdvance() {
+    if (offerCarouselInterval) clearInterval(offerCarouselInterval);
+    if (offers.length > 1) {
+        offerCarouselInterval = setInterval(nextOffer, 8000);
+    }
+}
+
+function resetOfferTimer() {
+    if (countdownIntervalId) {
+        clearInterval(countdownIntervalId);
+        countdownIntervalId = null;
+    }
+    
+    if (offers.length === 0) return;
+    
+    const offer = offers[currentOfferIndex];
+    const countdownDateObj = new Date(offer.endDate);
+    
+    if (isNaN(countdownDateObj.getTime())) {
+        showOfferEndedMessage();
+        return;
+    }
+    
+    let countdownDate = countdownDateObj.getTime();
+    
+    const daysEl = document.getElementById('offerDays0');
+    const hoursEl = document.getElementById('offerHours0');
+    const minutesEl = document.getElementById('offerMinutes0');
+    const secondsEl = document.getElementById('offerSeconds0');
+    
+    function update() {
+        const now = new Date().getTime();
+        const distance = countdownDate - now;
+        
+        if (distance <= 0) {
+            clearInterval(countdownIntervalId);
+            countdownIntervalId = null;
+            showOfferEndedMessage();
+            return;
+        }
+        
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        
+        if (daysEl) daysEl.textContent = String(days).padStart(2, '0');
+        if (hoursEl) hoursEl.textContent = String(hours).padStart(2, '0');
+        if (minutesEl) minutesEl.textContent = String(minutes).padStart(2, '0');
+        if (secondsEl) secondsEl.textContent = String(seconds).padStart(2, '0');
+    }
+    
+    update();
+    countdownIntervalId = setInterval(update, 1000);
+}
+
+function showOfferEndedMessage() {
+    if (offers.length > 1) {
+        const nextActiveOffer = offers.find((o, i) => i !== currentOfferIndex && new Date(o.endDate) > new Date());
+        if (nextActiveOffer) {
+            currentOfferIndex = offers.indexOf(nextActiveOffer);
+            renderCurrentOffer();
+            return;
+        }
+    }
+    
+    const container = document.querySelector('.offers-container');
+    if (!container) return;
+    
+    const countdown = container.querySelector('.countdown');
+    if (countdown) countdown.style.display = 'none';
+    
+    const prevBtn = document.querySelector('.carousel-prev');
+    const nextBtn = document.querySelector('.carousel-next');
+    const dotsContainer = document.getElementById('carouselDots');
+    
+    if (prevBtn) prevBtn.style.display = 'none';
+    if (nextBtn) nextBtn.style.display = 'none';
+    if (dotsContainer) dotsContainer.style.display = 'none';
+    
+    container.innerHTML = `
+        <div class="offer-ended">
+            <div class="offer-ended-badge">
+                <i class="fas fa-bell"></i>
+                <span>All Offers Ended</span>
+            </div>
+            <h2 class="offer-ended-title">Current Offers Have Ended!</h2>
+            <p class="offer-ended-subtitle">
+                Stay tuned for new exciting deals.<br>
+                Contact us for the latest offers.
+            </p>
+            <div class="offer-ended-buttons">
+                <a href="#contact" class="btn btn-primary">
+                    <span>Contact Us</span>
+                    <i class="fas fa-envelope"></i>
+                </a>
+                <a href="collections.html" class="btn btn-outline">
+                    <span>View Products</span>
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    `;
+    
+    if (typeof AOS !== 'undefined') AOS.refresh();
+}
 
 const NEW_CATEGORY_COLORS = [
     { bg: '#9b59b6', text: '#ffffff' },
@@ -134,14 +441,14 @@ function getBadgeStyle(badgeText, category, productIndex) {
     
     for (const [key, colors] of Object.entries(keywordColors)) {
         if (badge.includes(key)) {
-            return `style="background:${colors.bg};color:${colors.text};"`;
+            return 'style="background:' + colors.bg + ';color:' + colors.text + ';"';
         }
     }
     
     let categoryKey = (category || '').toLowerCase();
     if (CATEGORY_COLORS[categoryKey]) {
         const colors = CATEGORY_COLORS[categoryKey];
-        return `style="background:${colors.bg};color:${colors.text};"`;
+        return 'style="background:' + colors.bg + ';color:' + colors.text + ';"';
     }
     
     if (!categoryColorIndex[categoryKey]) {
@@ -149,7 +456,7 @@ function getBadgeStyle(badgeText, category, productIndex) {
         categoryColorIndex[categoryKey] = count % NEW_CATEGORY_COLORS.length;
     }
     const colors = NEW_CATEGORY_COLORS[categoryColorIndex[categoryKey]];
-    return `style="background:${colors.bg};color:${colors.text};"`;
+    return 'style="background:' + colors.bg + ';color:' + colors.text + ';"';
 }
 
 function formatCategoryName(category) {
@@ -445,7 +752,7 @@ async function loadProductsFromExcel() {
     console.log('Sheet ID:', CONFIG.SHEET_ID);
     
     try {
-        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFEZ0NWHMAIaKg8JQnQEG6gBtqr1aIz0UMpCnCwPY2_m_og_FMDPY_lkre0JSe2BUlfvVgWcKMfXvD/pub?output=csv';
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFEZ0NWHMAIaKg8JQnQEG6gBtqr1aIz0UMpCnCwPY2_m_og_FMDPY_lkre0JSe2BUlfvVgWcKMfXvD/pub?gid=685618677&single=true&output=csv';
         
         console.log('Fetching:', csvUrl);
         
@@ -581,11 +888,16 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const preloader = document.getElementById('preloader');
     
-    await loadProductsFromExcel();
+    await Promise.all([
+        loadProductsFromExcel(),
+        loadOffersFromExcel()
+    ]);
     
-    setTimeout(() => {
-        preloader.classList.add('loaded');
-    }, 1500);
+    if (preloader) {
+        setTimeout(() => {
+            preloader.classList.add('loaded');
+        }, 1500);
+    }
 
     const productDetail = document.getElementById('productDetail');
     if (productDetail) {
@@ -608,7 +920,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     initSearch();
     initHeroSlider();
     initTestimonials();
-    initCountdown();
+    initOffersCarousel();
     initForms();
     initBackToTop();
     initScrollReveal();
@@ -662,6 +974,8 @@ function initNavbar() {
     const navToggle = document.getElementById('navToggle');
     const navMenu = document.getElementById('navMenu');
     const navOverlay = document.getElementById('navOverlay');
+
+    if (!navbar || !navToggle || !navMenu || !navOverlay) return;
 
     window.addEventListener('scroll', () => {
         if (!navMenu.classList.contains('active')) {
@@ -733,6 +1047,8 @@ function initSearch() {
     const navbarSearchInput = document.getElementById('navbarSearchInput');
     const navbarSearchBtn = document.getElementById('navbarSearchBtn');
     const mobileSearchBtn = document.getElementById('mobileSearchBtn');
+
+    if (!searchOverlay && !navbarSearchInput && !mobileSearchBtn) return;
 
     function openSearchOverlay() {
         if (searchOverlay) {
@@ -1018,7 +1334,6 @@ function renderProductDetail(productId) {
             <div class="product-gallery">
                 <div class="gallery-main">
                     ${images.length > 0 ? `<img src="${images[0].src}" alt="${escapeHtml(product.name)}" id="mainImage">` : '<div class="no-image">No Image Available</div>'}
-                    ${images.length === 2 ? `<button class="gallery-toggle" onclick="toggleGalleryImage()"><i class="fas fa-sync-alt"></i> View Back</button>` : ''}
                 </div>
                 ${images.length > 1 ? `
                 <div class="gallery-nav">
@@ -1054,13 +1369,13 @@ function renderProductDetail(productId) {
                 </div>
                 ` : ''}
                 
-                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <div class="product-actions">
                     <a href="${whatsappUrl}" class="btn-order-whatsapp" target="_blank">
                         <i class="fab fa-whatsapp"></i>
                         <span>Order via WhatsApp</span>
                     </a>
                     
-                    <a href="collections.html" class="btn-back-products" style="padding: 16px 24px; border-radius: 12px; background: var(--light-gray); color: var(--text-color); font-weight: 600; font-size: 14px;">
+                    <a href="collections.html" class="btn-back-products">
                         <i class="fas fa-arrow-left"></i>
                         <span>Back to Products</span>
                     </a>
@@ -1071,7 +1386,37 @@ function renderProductDetail(productId) {
     
     document.getElementById('productDetail').innerHTML = productDetailHTML;
     
+    initProductGallerySwipe();
+    
     renderRelatedProducts(product);
+}
+
+function initProductGallerySwipe() {
+    const gallery = document.querySelector('.product-gallery');
+    if (!gallery) return;
+    
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const minSwipeDistance = 50;
+    
+    gallery.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    
+    gallery.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }, { passive: true });
+    
+    function handleSwipe() {
+        const swipeDistance = touchEndX - touchStartX;
+        
+        if (swipeDistance > minSwipeDistance) {
+            changeGalleryImage(-1);
+        } else if (swipeDistance < -minSwipeDistance) {
+            changeGalleryImage(1);
+        }
+    }
 }
 
 function renderRelatedProducts(currentProduct) {
@@ -1156,6 +1501,8 @@ let currentGalleryIndex = 0;
 
 function setGalleryImage(index) {
     const mainImage = document.getElementById('mainImage');
+    if (!mainImage) return;
+    
     const productId = new URLSearchParams(window.location.search).get('id');
     const product = products.find(p => p.id === parseInt(productId));
     if (!product) return;
@@ -1166,7 +1513,8 @@ function setGalleryImage(index) {
     
     if (images[index]) {
         mainImage.src = images[index];
-        document.querySelectorAll('.indicator').forEach((ind, i) => {
+        const indicators = document.querySelectorAll('.indicator');
+        indicators.forEach((ind, i) => {
             ind.classList.toggle('active', i === index);
         });
         currentGalleryIndex = index;
@@ -1181,6 +1529,8 @@ function changeGalleryImage(direction) {
     let images = [];
     if (product.image) images.push(product.image);
     if (product.backImage && product.backImage !== product.image) images.push(product.backImage);
+    
+    if (images.length <= 1) return;
     
     currentGalleryIndex = (currentGalleryIndex + direction + images.length) % images.length;
     setGalleryImage(currentGalleryIndex);
@@ -1228,6 +1578,8 @@ function initHeroSlider() {
     const dots = document.querySelectorAll('.slider-dot');
     let currentSlide = 0;
 
+    if (slides.length === 0 || dots.length === 0) return;
+
     dots.forEach((dot, index) => {
         dot.addEventListener('click', () => {
             currentSlide = index;
@@ -1235,7 +1587,8 @@ function initHeroSlider() {
         });
     });
 
-    setInterval(() => {
+    if (heroSliderInterval) clearInterval(heroSliderInterval);
+    heroSliderInterval = setInterval(() => {
         currentSlide = (currentSlide + 1) % slides.length;
         showSlide(currentSlide);
     }, 5000);
@@ -1317,81 +1670,6 @@ function initTestimonials() {
         index = 0;
         updatePosition();
     });
-}
-
-function showOfferEndedMessage() {
-    const offer = CONFIG.CURRENT_OFFER;
-    const offersContent = document.querySelector('.offers-content');
-    const countdown = document.getElementById('countdown');
-    
-    if (countdown) countdown.style.display = 'none';
-    
-    offersContent.innerHTML = `
-        <div class="offer-ended" data-aos="fade-up">
-            <div class="offer-ended-badge">
-                <i class="fas fa-bell"></i>
-                <span>Offer Ended</span>
-            </div>
-            <h2 class="offer-ended-title">${escapeHtml(offer.name)} Has Ended!</h2>
-            <p class="offer-ended-subtitle">
-                Special <span class="highlight">${escapeHtml(offer.discount)}</span> offer has concluded.<br>
-                Stay here for new deals.
-            </p>
-            <div class="offer-ended-buttons">
-                <a href="#contact" class="btn btn-primary">
-                    <span>Contact Us</span>
-                    <i class="fas fa-envelope"></i>
-                </a>
-                <a href="collections.html" class="btn btn-outline">
-                    <span>View Products</span>
-                    <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
-        </div>
-    `;
-    
-    AOS.refresh();
-}
-
-function initCountdown() {
-    const countdown = document.getElementById('countdown');
-    
-    if (!countdown) return;
-    
-    const countdownDateObj = new Date(CONFIG.COUNTDOWN_END_DATE);
-    
-    if (isNaN(countdownDateObj.getTime())) {
-        console.warn(`Browz Clothing: Invalid COUNTDOWN_END_DATE "${CONFIG.COUNTDOWN_END_DATE}". Valid format: YYYY-MM-DDTHH:mm:ss. Showing offer as ended.`);
-        showOfferEndedMessage();
-        return;
-    }
-    
-    let countdownDate = countdownDateObj.getTime();
-    let intervalId = null;
-
-    function update() {
-        const now = new Date().getTime();
-        const distance = countdownDate - now;
-
-        if (distance <= 0) {
-            if (intervalId) clearInterval(intervalId);
-            showOfferEndedMessage();
-            return;
-        }
-
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-        document.getElementById('days').textContent = String(days).padStart(2, '0');
-        document.getElementById('hours').textContent = String(hours).padStart(2, '0');
-        document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
-        document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
-    }
-
-    update();
-    intervalId = setInterval(update, 1000);
 }
 
 function initForms() {
@@ -1485,5 +1763,11 @@ function initScrollReveal() {
 
     scrollRevealElements.forEach(el => observer.observe(el));
 }
+
+window.prevOffer = prevOffer;
+window.nextOffer = nextOffer;
+window.showOffer = showOffer;
+window.setGalleryImage = setGalleryImage;
+window.changeGalleryImage = changeGalleryImage;
 
 
