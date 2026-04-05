@@ -2078,6 +2078,11 @@ button {
     margin: 25px 0;
 }
 
+.about-content .btn {
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
 .about-feature {
     display: flex;
     align-items: flex-start;
