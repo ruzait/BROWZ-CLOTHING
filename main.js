@@ -1,4 +1,81 @@
-let products = [];
+// Products array - populated from Google Sheets or default products
+let products = [
+    {
+        id: 1,
+        name: 'Premium Linen Shirt',
+        category: 'men',
+        price: 2700,
+        oldPrice: 3200,
+        discount: 16,
+        image: 'images/placeholder.svg',
+        backImage: '',
+        badge: 'New Arrival',
+        description: 'Premium quality linen shirt, perfect for both casual and formal occasions',
+        brand: 'Browz',
+        itemCode: 'BC-B000001',
+        colors: ['Black', 'Grey', 'Navy Blue', 'Cream']
+    },
+    {
+        id: 2,
+        name: 'Classic Cotton Kurtas',
+        category: 'men',
+        price: 3500,
+        oldPrice: null,
+        discount: 0,
+        image: 'images/placeholder.svg',
+        backImage: '',
+        badge: '',
+        description: 'Comfortable cotton kurtas for daily wear',
+        brand: 'Browz',
+        itemCode: 'BC-B000002',
+        colors: ['White', 'Blue']
+    },
+    {
+        id: 3,
+        name: 'Designer Saree Collection',
+        category: 'women',
+        price: 8500,
+        oldPrice: 12000,
+        discount: 29,
+        image: 'images/placeholder.svg',
+        backImage: '',
+        badge: 'Sale',
+        description: 'Beautiful designer sarees with premium fabric',
+        brand: 'Browz',
+        itemCode: 'BC-B000003',
+        colors: ['Red', 'Maroon', 'Green']
+    },
+    {
+        id: 4,
+        name: 'Kids Party Wear Set',
+        category: 'kids',
+        price: 2800,
+        oldPrice: 3500,
+        discount: 20,
+        image: 'images/placeholder.svg',
+        backImage: '',
+        badge: 'Popular',
+        description: 'Adorable party wear for kids',
+        brand: 'Browz',
+        itemCode: 'BC-B000004',
+        colors: ['Pink', 'Blue', 'Yellow']
+    },
+    {
+        id: 5,
+        name: 'Premium Silk Fabric',
+        category: 'fabrics',
+        price: 5500,
+        oldPrice: null,
+        discount: 0,
+        image: 'images/placeholder.svg',
+        backImage: '',
+        badge: '',
+        description: 'Premium quality silk fabric',
+        brand: 'Browz',
+        itemCode: 'BC-B000005',
+        colors: ['Red', 'Blue', 'Green']
+    }
+];
 let currentFilter = 'all';
 let currentSearchQuery = '';
 
@@ -129,30 +206,21 @@ async function loadOffersFromExcel() {
         const csvText = await response.text();
         if (!csvText || csvText.trim() === '') throw new Error('Empty response');
         
-        const rows = Papa.parse(csvText, {
-            skipEmptyLines: true,
-            transformHeader: (header) => header.trim().replace(/^["']|["']$/g, '')
-        }).data;
+        // Use custom CSV parser
+        const rawRows = parseCSV(csvText);
+        const headers = Object.keys(rawRows.length > 0 ? rawRows[0] : {}).map(h => h.toLowerCase());
         
-        if (rows.length < 2) throw new Error('No data found');
+        if (rawRows.length === 0) throw new Error('No data found');
         
-        const headers = rows[0].map(h => (h || '').trim().toLowerCase());
-        
-        offers = rows.slice(1).filter(row => {
-            if (!row.length) return false;
-            const rowData = {};
-            headers.forEach((header, i) => {
-                rowData[header] = (row[i] || '').trim();
-            });
-            
-            const isActiveRaw = (rowData['is_active'] || '').toLowerCase();
+        offers = rawRows.filter(row => {
+            const isActiveRaw = (row['is_active'] || '').toLowerCase();
             const isActive = isActiveRaw === 'yes';
             if (!isActive) return false;
             
-            const bgUrl = rowData['background_image'] || '';
+            const bgUrl = row['background_image'] || '';
             if (!bgUrl || bgUrl.length < 10) return false;
             
-            const dateStr = rowData['end_date'] || '';
+            const dateStr = row['end_date'] || '';
             let endDate = new Date(dateStr);
 
             if (isNaN(endDate.getTime())) {
@@ -166,17 +234,13 @@ async function loadOffersFromExcel() {
             
             return true;
         }).map((row, index) => {
-            const rowData = {};
-            headers.forEach((header, i) => {
-                rowData[header] = (row[i] || '').trim();
-            });
             return {
                 id: index + 1,
-                backgroundImage: rowData['background_image'] || '',
-                badgeText: rowData['badge_text'] || '',
-                title: rowData['title'] || '',
-                subtitle: rowData['subtitle'] || '',
-                endDate: rowData['end_date'] || '',
+                backgroundImage: row['background_image'] || '',
+                badgeText: row['badge_text'] || '',
+                title: row['title'] || '',
+                subtitle: row['subtitle'] || '',
+                endDate: row['end_date'] || '',
                 isActive: true
             };
         }).sort((a, b) => new Date(a.endDate) - new Date(b.endDate));
@@ -715,13 +779,10 @@ function getCachedProducts() {
             const age = now - parseInt(cacheTime);
             
             if (age < CONFIG.CACHE_TTL) {
-                console.log('Using cached products (age: ' + Math.round(age/1000) + 's)');
                 return JSON.parse(cached);
             }
         }
-    } catch (e) {
-        console.warn('Cache read failed:', e);
-    }
+    } catch (e) {}
     return null;
 }
 
@@ -729,20 +790,14 @@ function setCachedProducts(productsData) {
     try {
         localStorage.setItem(CONFIG.CACHE_KEY, JSON.stringify(productsData));
         localStorage.setItem(CONFIG.CACHE_TIME_KEY, Date.now().toString());
-        console.log('Products cached successfully');
-    } catch (e) {
-        console.warn('Cache write failed:', e);
-    }
+    } catch (e) {}
 }
 
 function clearProductsCache() {
     try {
         localStorage.removeItem(CONFIG.CACHE_KEY);
         localStorage.removeItem(CONFIG.CACHE_TIME_KEY);
-        console.log('Cache cleared');
-    } catch (e) {
-        console.warn('Cache clear failed:', e);
-    }
+    } catch (e) {}
 }
 
 function validateProduct(item, index) {
@@ -763,139 +818,212 @@ function validateProduct(item, index) {
     };
 }
 
+// Simple CSV Parser (doesn't need PapaParse)
+function parseCSV(csvText) {
+    const lines = csvText.split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+    const data = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        
+        // Simple CSV parsing for this format
+        const values = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let j = 0; j < lines[i].length; j++) {
+            const char = lines[i][j];
+            
+            if (char === '"') {
+                if (inQuotes && lines[i][j + 1] === '"') {
+                    current += '"';
+                    j++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === ',' && !inQuotes) {
+                values.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        values.push(current.trim());
+        
+        const row = {};
+        headers.forEach((header, idx) => {
+            let value = values[idx] || '';
+            // Remove outer quotes if present
+            if (value.startsWith('"') && value.endsWith('"')) {
+                value = value.slice(1, -1);
+            }
+            row[header] = value;
+        });
+        data.push(row);
+    }
+    
+    return data;
+}
+
 async function loadProductsFromExcel() {
-    // Always fetch fresh data (remove cache check for now)
-    const cachedProducts = null;
+    // Keep default products - use them if nothing else works
+    const defaultProducts = [...products];
     
-    console.log('Fetching products from Google Sheet...');
-    console.log('Sheet ID:', CONFIG.SHEET_ID);
+    // Try cache first
+    try {
+        const cached = getCachedProducts();
+        if (cached && cached.length > 0) {
+            products = cached;
+            return true;
+        }
+    } catch(e) {}
     
+    // Try fetch from Google Sheets
     try {
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw/pub?gid=1503251048&single=true&output=csv';
         
-        console.log('Fetching:', csvUrl);
-        
         const response = await fetch(csvUrl, {
-            cache: 'no-cache'
+            method: 'GET',
+            mode: 'cors'
         });
-        
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
         
         if (!response.ok) {
-            throw new Error('Network response was not ok: ' + response.status);
-        }
-        
-        const csvText = await response.text();
-        console.log('Raw CSV length:', csvText.length);
-        console.log('First 500 chars:', csvText.substring(0, 500));
-        
-        if (!csvText || csvText.trim() === '') {
-            throw new Error('Empty response from sheet');
-        }
-        
-        const rows = Papa.parse(csvText, {
-            skipEmptyLines: true,
-            transformHeader: (header) => header.trim().replace(/^["']|["']$/g, '')
-        }).data;
-        
-        console.log('Parsed rows:', rows.length);
-        
-        if (rows.length < 2) throw new Error('No data found in sheet');
-        
-        const headers = rows[0].map(h => (h || '').trim());
-        console.log('Headers:', headers);
-        
-        const rawProducts = rows.slice(1).filter(row => row.length > 1 && row[0]);
-        
-        const validatedProducts = [];
-        
-        rawProducts.forEach((row, index) => {
-            const item = {};
-            headers.forEach((header, i) => {
-                item[header] = (row[i] || '').trim();
-            });
-            
-            const validation = validateProduct(item, index);
-            if (!validation.isValid) {
-                console.warn(`Product ${index + 1} skipped:`, validation.errors.join(', '));
-                return;
-            }
-            
-            const price = parseFloat(item.Price || item.price || 0);
-            const oldPrice = parseFloat(item['Old Price'] || item.OldPrice || item.oldPrice || 0) || null;
-            const sheetDiscount = parseFloat(item['Discount %'] || item.Discount || item.discount || 0);
-            const calculatedDiscount = oldPrice ? Math.round((1 - price / oldPrice) * 100) : 0;
-            
-            let finalDiscount = oldPrice ? calculatedDiscount : (sheetDiscount > 0 ? sheetDiscount : 0);
-            if (oldPrice && sheetDiscount > 0 && calculatedDiscount !== sheetDiscount) {
-                const productName = item['Product Name'] || item.Name || item.Product || 'Unknown';
-                console.warn(`Product '${productName}': Discount in sheet (${sheetDiscount}%) doesn't match calculation based on ${CONFIG.CURRENCY}${formatPrice(price)} vs ${CONFIG.CURRENCY}${formatPrice(oldPrice)}. Updated to ${calculatedDiscount}%.`);
-            }
-            
-            const imageUrl = item['Front Image'] || item.Image || item.image || item['Image URL'];
-            const backImageUrl = item['Back Image'] || item.BackImage || item.backImage || item.Image || item.image;
-            
-            const colorsRaw = item['Colors'] || item['colors'] || item['Color'] || item['color'] || item['COLORS'] || '';
-            const colors = colorsRaw ? String(colorsRaw).split(',').map(c => c.trim()).filter(c => c) : [];
-            
-            validatedProducts.push({
-                id: index + 1,
-                originalIndex: index,
-                name: item['Product Name'] || item.Name || item.name || item.Product || '',
-                category: (item.Category || item.category || 'general').toLowerCase(),
-                price: price,
-                oldPrice: oldPrice,
-                discount: finalDiscount,
-                image: isValidUrl(imageUrl) ? convertGoogleDriveLink(imageUrl) : '',
-                backImage: isValidUrl(backImageUrl) ? convertGoogleDriveLink(backImageUrl) : (isValidUrl(imageUrl) ? convertGoogleDriveLink(imageUrl) : ''),
-                badge: item.Badge || item.badge || '',
-                description: item.Description || item.description || '',
-                brand: item.Brand || item.brand || '',
-                itemCode: item['Item Code'] || item.ItemCode || item.itemCode || item.Code || item.code || '',
-                timestamp: item.Timestamp || item.timestamp || '',
-                colors: colors
-            });
-            
-            if (colors.length > 0) {
-                console.log(`Product "${item['Product Name'] || item.name}" has colors:`, colors);
-            }
-        });
-        
-        console.log('Validated products:', validatedProducts.length);
-        products = validatedProducts;
-        
-        products.sort((a, b) => {
-            if (!a.timestamp && !b.timestamp) return b.originalIndex - a.originalIndex;
-            if (!a.timestamp) return 1;
-            if (!b.timestamp) return -1;
-            const dateDiff = new Date(b.timestamp) - new Date(a.timestamp);
-            if (dateDiff !== 0) return dateDiff;
-            return b.originalIndex - a.originalIndex;
-        });
-        
-        products.forEach((p, i) => p.id = i + 1);
-        
-        setCachedProducts(products);
-        
-        console.log('Products loaded from Google Sheets:', products.length);
-        return true;
-    } catch (error) {
-        console.error('Error loading products:', error);
-        console.error('Error stack:', error.stack);
-        clearProductsCache();
-        
-        const cachedFallback = getCachedProducts();
-        if (cachedFallback) {
-            console.log('Using expired cache as fallback');
-            products = cachedFallback;
+            products = defaultProducts;
             return true;
         }
         
-        products = [];
-        return false;
+        const csvText = await response.text();
+        if (!csvText || csvText.trim().length < 10) {
+            products = defaultProducts;
+            return true;
+        }
+        
+        const rows = parseCSV(csvText);
+        if (rows.length === 0) {
+            products = defaultProducts;
+            return true;
+        }
+        
+        const validProducts = [];
+        
+        rows.forEach((row) => {
+            const name = row['Product Name'] || row['Name'] || '';
+            const price = parseFloat(row['Price'] || 0);
+            
+            if (!name || !price || price <= 0) return;
+            
+            const imageUrl = row['Front Image'] || '';
+            
+            validProducts.push({
+                id: validProducts.length + 1,
+                name: name.trim(),
+                category: (row['Category'] || 'general').toLowerCase().trim(),
+                price: price,
+                oldPrice: parseFloat(row['Old Price'] || 0) || null,
+                discount: parseFloat(row['Discount %'] || 0) || 0,
+                image: isValidUrl(imageUrl) ? convertGoogleDriveLink(imageUrl) : '',
+                backImage: row['Back Image'] || '',
+                badge: row['Badge'] || '',
+                description: row['Description'] || '',
+                brand: row['Brand'] || '',
+                itemCode: row['Item Code'] || '',
+                colors: (row['Colors'] || '').split(',').map(c => c.trim()).filter(c => c)
+            });
+        });
+        
+        if (validProducts.length > 0) {
+            products = validProducts;
+            setCachedProducts(products);
+        } else {
+            products = defaultProducts;
+        }
+        
+    } catch (error) {
+        products = defaultProducts;
     }
+    
+    return true;
 }
+
+// Default sample products (used if Google Sheets fails)
+const defaultProducts = [
+    {
+        id: 1,
+        name: 'Premium Linen Shirt',
+        category: 'men',
+        price: 2700,
+        oldPrice: 3200,
+        discount: 16,
+        image: 'https://lh3.googleusercontent.com/d/1htrIbJoIKlBLvjTrj1OySWfvv81zYooU=w500',
+        backImage: '',
+        badge: 'New Arrival',
+        description: 'Premium quality linen shirt, perfect for both casual and formal occasions',
+        brand: 'Browz',
+        itemCode: 'BC-B000001',
+        colors: ['Black', 'Grey', 'Navy Blue', 'Cream']
+    },
+    {
+        id: 2,
+        name: 'Classic Cotton Kurtas',
+        category: 'men',
+        price: 3500,
+        oldPrice: null,
+        discount: 0,
+        image: 'https://placehold.co/400x500/1a1a1a/ffffff?text=Cotton+Kurtas',
+        backImage: '',
+        badge: '',
+        description: 'Comfortable cotton kurtas for daily wear',
+        brand: 'Browz',
+        itemCode: 'BC-B000002',
+        colors: ['White', 'Blue']
+    },
+    {
+        id: 3,
+        name: 'Designer Saree Collection',
+        category: 'women',
+        price: 8500,
+        oldPrice: 12000,
+        discount: 29,
+        image: 'https://placehold.co/400x500/2a2a2a/ffffff?text=Designer+Saree',
+        backImage: '',
+        badge: 'Sale',
+        description: 'Beautiful designer sarees with premium fabric',
+        brand: 'Browz',
+        itemCode: 'BC-B000003',
+        colors: ['Red', 'Maroon', 'Green']
+    },
+    {
+        id: 4,
+        name: 'Kids Party Wear Set',
+        category: 'kids',
+        price: 2800,
+        oldPrice: 3500,
+        discount: 20,
+        image: 'https://placehold.co/400x500/3a3a3a/ffffff?text=Kids+Party+Wear',
+        backImage: '',
+        badge: 'Popular',
+        description: 'Adorable party wear for kids',
+        brand: 'Browz',
+        itemCode: 'BC-B000004',
+        colors: ['Pink', 'Blue', 'Yellow']
+    },
+    {
+        id: 5,
+        name: 'Premium Silk Fabric',
+        category: 'fabrics',
+        price: 5500,
+        oldPrice: null,
+        discount: 0,
+        image: 'https://placehold.co/400x500/4a4a4a/ffffff?text=Silk+Fabric',
+        backImage: '',
+        badge: '',
+        description: 'Premium quality silk fabric',
+        brand: 'Browz',
+        itemCode: 'BC-B000005',
+        colors: ['Red', 'Blue', 'Green']
+    }
+];
 
 document.addEventListener('DOMContentLoaded', async function() {
     AOS.init({
@@ -906,11 +1034,32 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
 
     const preloader = document.getElementById('preloader');
+    const productsGrid = document.getElementById('productsGrid');
     
-    await Promise.all([
-        loadProductsFromExcel(),
-        loadOffersFromExcel()
-    ]);
+    const pageUrl = window.location.href;
+    const collectionsPage = pageUrl.includes('collections.html') || pageUrl.includes('collections/');
+    const productDetail = document.getElementById('productDetail');
+    
+    // CRITICAL: Render products IMMEDIATELY before any async operations
+    // This ensures products show even if fetch fails
+    if (products.length > 0) {
+        if (productDetail) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = urlParams.get('id');
+            if (productId) {
+                renderProductDetail(productId);
+            }
+        } else if (collectionsPage) {
+            // Don't render yet - collections page has filters
+        } else {
+            // Render on home page immediately
+            renderHomeProducts();
+        }
+    }
+    
+    // Now try to load/refresh from Google Sheets in background
+    await loadProductsFromExcel();
+    await loadOffersFromExcel();
     
     if (preloader) {
         setTimeout(() => {
@@ -918,21 +1067,27 @@ document.addEventListener('DOMContentLoaded', async function() {
         }, 1500);
     }
 
-    const productDetail = document.getElementById('productDetail');
-    if (productDetail) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const productId = urlParams.get('id');
-        if (productId) {
-            renderProductDetail(productId);
-        }
-    } else {
-        if (products.length > 0) {
-            renderHomeProducts();
+    // Re-render after data loads (in case we got new data from sheets)
+    if (products.length > 0) {
+        if (productDetail) {
+            // Already rendered
+        } else if (collectionsPage) {
+            setTimeout(() => {
+                if (typeof initDynamicFilters === 'function') initDynamicFilters();
+                if (typeof setupCollectionsFilters === 'function') setupCollectionsFilters();
+                if (typeof renderCollectionsProducts === 'function') {
+                    renderCollectionsProducts('all');
+                }
+                if (typeof initCollectionsSearch === 'function') initCollectionsSearch();
+            }, 100);
         } else {
-            const grid = document.getElementById('productsGrid');
-            if (grid) grid.innerHTML = '<p style="text-align:center;padding:40px;">No products available at the moment.</p>';
+            // Re-render on home page (will update with fresh data if available)
+            renderHomeProducts();
         }
+    } else if (productsGrid) {
+        productsGrid.innerHTML = '<p style="text-align:center;padding:40px;">No products available at the moment.</p>';
     }
+    
     initDynamicContent();
 
     initNavbar();
@@ -1260,8 +1415,9 @@ function renderProducts(filter) {
 
 function renderHomeProducts() {
     const grid = document.getElementById('productsGrid');
+    if (!grid) return;
+    
     grid.innerHTML = '';
-
     const homeProducts = products.slice(0, 10);
 
     homeProducts.forEach((product, index) => {
@@ -1788,5 +1944,12 @@ window.nextOffer = nextOffer;
 window.showOffer = showOffer;
 window.setGalleryImage = setGalleryImage;
 window.changeGalleryImage = changeGalleryImage;
+window.loadProductsFromExcel = loadProductsFromExcel;
+window.renderCollectionsProducts = renderCollectionsProducts;
+window.initDynamicFilters = initDynamicFilters;
+window.setupCollectionsFilters = setupCollectionsFilters;
+window.renderHomeProducts = renderHomeProducts;
+window.renderProducts = renderProducts;
+window.loadSampleProducts = loadSampleProducts;
 
 
