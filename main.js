@@ -867,9 +867,6 @@ function parseCSV(csvText) {
 }
 
 async function loadProductsFromExcel() {
-    // Keep default products - use them if nothing else works
-    const defaultProducts = [...products];
-    
     // Try cache first
     try {
         const cached = getCachedProducts();
@@ -1070,7 +1067,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Re-render after data loads (in case we got new data from sheets)
     if (products.length > 0) {
         if (productDetail) {
-            // Already rendered
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = urlParams.get('id');
+            if (productId) {
+                renderProductDetail(productId);
+            }
         } else if (collectionsPage) {
             setTimeout(() => {
                 if (typeof initDynamicFilters === 'function') initDynamicFilters();
@@ -1099,6 +1100,47 @@ document.addEventListener('DOMContentLoaded', async function() {
     initBackToTop();
     initScrollReveal();
     initWhatsAppFloat();
+    initInstallButton();
+});
+
+let deferredPrompt;
+
+// PWA Install Button Logic
+function initInstallButton() {
+    const installBtn = document.getElementById('installAppBtn');
+    if (!installBtn) return;
+
+    // Detect platform
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+    // Show button only on mobile and not already installed
+    if (isMobile && !isStandalone) {
+        installBtn.style.display = 'flex';
+    }
+
+    // Handle button click
+    installBtn.addEventListener('click', async () => {
+        if (isIOS) {
+            alert('📱 iOS Instructions:\n\n1. Tap the Share button (box with arrow)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add"\n\nBrowz Clothing will appear on your home screen!');
+        } else if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                installBtn.style.display = 'none';
+            }
+            deferredPrompt = null;
+        } else {
+            alert('📱 To Install Browz Clothing App:\n\n• Android: Tap menu → "Add to Home Screen"\n• iOS: Tap Share → "Add to Home Screen"');
+        }
+    });
+}
+
+// Listen for PWA install prompt
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
 });
 
 function initWhatsAppFloat() {
@@ -1508,7 +1550,7 @@ function renderProductDetail(productId) {
         <div class="product-detail-container">
             <div class="product-gallery">
                 <div class="gallery-main">
-                    ${images.length > 0 ? `<img src="${images[0].src}" alt="${escapeHtml(product.name)}" id="mainImage">` : '<div class="no-image">No Image Available</div>'}
+                    ${images.length > 0 ? `<img src="${images[0].src}" alt="${escapeHtml(product.name)}" id="mainImage" onerror="this.src='images/placeholder.svg'">` : '<div class="no-image"><img src="images/placeholder.svg" alt="No Image"></div>'}
                 </div>
                 ${images.length > 1 ? `
                 <div class="gallery-nav">

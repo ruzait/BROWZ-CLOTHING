@@ -7303,3 +7303,36 @@ button {
         font-size: 0.8rem;
     }
 }
+
+/* Install App Button */
+.install-app-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--gold) 0%, #d4b76a 100%);
+    border: none;
+    border-radius: 50%;
+    color: var(--primary-black);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-left: 8px;
+}
+
+.install-app-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(201, 169, 89, 0.4);
+}
+
+.install-app-btn i {
+    margin: 0;
+}
+
+/* Show install button on mobile */
+@media (max-width: 768px) {
+    .install-app-btn {
+        display: flex;
+    }
+}
