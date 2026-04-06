@@ -1,13 +1,13 @@
 ================================================================================
                     PROJECT REPORT: BROWZ CLOTHING WEBSITE
                               Premium E-Commerce Platform
-                              Version 2.0 - April 2026
+                              Version 2.1 - April 2026
 ================================================================================
 
-Project: Browz Clothing / Mr. Nila Tex
+Project: Browz Clothing
 Website: https://browzclothing.netlify.app
 Location: Addalaichenai, Eastern Province, Sri Lanka
-Last Updated: April 5, 2026
+Last Updated: April 6, 2026
 Developer: Professional Web Development Team
 
 ================================================================================
@@ -20,14 +20,16 @@ Developer: Professional Web Development Team
 4. Architecture & File Structure
 5. Google Sheets Integration
 6. Core Features
-7. Security Implementation
-8. Responsive Design
-9. SEO Optimization
-10. Performance Optimization
-11. Deployment Guide
-12. Owner Manual
-13. Troubleshooting
-14. Changelog
+7. Offers Carousel System (Enhanced)
+8. Security Implementation
+9. Responsive Design
+10. SEO Optimization
+11. Performance Optimization
+12. Deployment Guide
+13. Owner Manual
+14. Troubleshooting
+15. Known Issues & Recommendations
+16. Changelog
 
 ================================================================================
                           1. EXECUTIVE SUMMARY
@@ -45,6 +47,7 @@ Key Achievements:
 - Professional SEO implementation
 - High-performance lazy loading
 - Enterprise-grade security measures
+- Enhanced offers carousel with modern animations
 
 ================================================================================
                           2. PROJECT OVERVIEW
@@ -52,7 +55,7 @@ Key Achievements:
 
 Business Profile:
 ----------------
-Name: Browz Clothing (Mr. Nila Tex)
+Name: Browz Clothing
 Type: Premium Clothing & Textile Showroom
 Founded: 2022
 Location: 144 Union Road, Addalaichenai, Sri Lanka
@@ -107,11 +110,11 @@ Root Directory:
 ├── index.html           Home page with hero, products showcase, offers
 ├── collections.html     Full product listing with filters and search
 ├── product.html         Dynamic product detail page (?id=X)
-├── main.js              Core JavaScript (1773 lines)
-├── styles.css           Complete stylesheet (6223 lines)
-├── Browz_Clothing.png   Logo (PNG format)
-├── Browz_Clothing.svg   Logo (SVG format)
-├── Browz_Clothing.ico   Favicon
+├── main.js              Core JavaScript (~1800 lines)
+├── styles.css           Complete stylesheet (~6300 lines - needs cleanup)
+├── Browz_Clothing.png  Logo (PNG format)
+├── Browz_Clothing.svg  Logo (SVG format)
+├── Browz_Clothing.ico  Favicon
 ├── sitemap.xml          SEO sitemap
 ├── robots.txt           Search engine directives
 ├── netlify.toml         Deployment configuration
@@ -127,9 +130,7 @@ images/
 │   ├── hero-2.jpg       Hero slider image 2
 │   ├── hero-3.jpg       Hero slider image 3
 │   ├── category-men.jpg  Men's category image
-│   ├── category-women.jpg Women's category image
 │   ├── category-kids.jpg Kids category image
-│   ├── category-fabric.jpg Fabric category image
 │   ├── about-main.jpg    About section main image
 │   ├── about-secondary.jpg About section secondary image
 │   ├── testimonial-1.jpg Customer testimonial 1
@@ -137,64 +138,6 @@ images/
 │   ├── testimonial-3.jpg Customer testimonial 3
 │   └── og-image.jpg     Social media sharing image
 └── placeholder.svg      Image load error fallback
-
-Page Architecture:
-------------------
-
-index.html (Home Page)
-├── Preloader animation
-├── Fixed Navigation Bar (transparent → solid on scroll)
-│   ├── Logo
-│   ├── Navigation Menu
-│   └── Search Bar
-├── Hero Section (full-screen slider)
-│   ├── 3 Background Images
-│   ├── Overlay
-│   ├── Title Animation
-│   └── Call-to-Action Buttons
-├── Features Bar (4 features)
-├── Offers Carousel Section
-│   ├── Dynamic Background Image
-│   ├── Countdown Timer
-│   └── Navigation Controls
-├── Categories Grid (3 categories)
-├── Products Showcase (10 newest)
-├── About Section
-│   ├── Image Gallery
-│   └── Experience Badge
-├── Testimonials Slider
-├── Contact Section
-│   ├── Google Maps
-│   ├── Contact Information
-│   ├── Contact Form (WhatsApp)
-│   └── Social Links
-├── Footer
-│   ├── Brand Info
-│   ├── Quick Links
-│   ├── Categories
-│   ├── Contact Details
-│   └── Copyright
-└── Back to Top Button
-
-collections.html (Collections Page)
-├── Page Header with Breadcrumb
-├── Filter Section
-│   ├── Category Buttons (dynamic)
-│   └── Price Range Slider
-├── Product Grid (100 per load)
-├── Load More Button
-└── WhatsApp Float Button
-
-product.html (Product Detail)
-├── Page Header
-├── Dynamic Product Content
-│   ├── Image Gallery
-│   ├── Product Information
-│   ├── Color Swatches
-│   ├── Description
-│   └── WhatsApp Order Button
-├── Related Products (same category)
-└── Back to Products Link
 
 ================================================================================
                       5. GOOGLE SHEETS INTEGRATION
@@ -247,7 +190,7 @@ Products Sheet Columns:
 | Front Image     | No       | Google Drive URL or direct URL        |
 | Back Image      | No       | Google Drive URL for flip effect      |
 | Category        | No       | men, women, kids, fabric, etc.       |
-| Badge           | No       | new, hot, sale, trend, etc.          |
+| Badge           | No       | new, hot, sale, trend, etc.         |
 | Description     | No       | Product description text              |
 | Brand           | No       | Brand name                           |
 | Item Code       | No       | Custom product code                  |
@@ -279,11 +222,11 @@ Caching Strategy:
 - Graceful fallback to expired cache on network failure
 
 ================================================================================
-                            6. CORE FEATURES
+                             6. CORE FEATURES
 ================================================================================
 
 Product Management:
--------------------
+------------------
 1. Dynamic Loading
    - Products loaded from Google Sheets via CSV
    - Automatic parsing with PapaParse
@@ -311,29 +254,6 @@ Product Management:
    - MEDIUM (≥15%): Orange (#e67e22)
    - Default (<15%): Gold (#c9a959)
 
-Offers Carousel:
-----------------
-1. Multi-Offer Support
-   - Unlimited offers via Google Sheets
-   - Auto-sort by end date (nearest first)
-   - Automatic expiry handling
-
-2. Countdown Timer
-   - Live countdown to offer end
-   - Auto-switch to next offer when expired
-   - "All Offers Ended" message display
-
-3. Navigation
-   - Auto-advance every 8 seconds
-   - Manual arrows (desktop)
-   - Swipe gestures (mobile)
-   - Dot indicators
-
-4. Background Images
-   - Full-width banner images
-   - Google Drive URL support
-   - Gradient overlay for text readability
-
 WhatsApp Integration:
 ---------------------
 1. Order Button
@@ -354,7 +274,71 @@ WhatsApp Integration:
    - WhatsApp submission
 
 ================================================================================
-                         7. SECURITY IMPLEMENTATION
+                    7. OFFERS CAROUSEL SYSTEM (ENHANCED)
+================================================================================
+
+The offers carousel has been enhanced with modern transitions and mobile support.
+
+Key Features:
+-------------
+1. Auto-Advance
+   - 6-second interval between slides
+   - Pauses on hover
+   - Resumes after interaction
+
+2. Navigation Controls
+   - Arrow buttons (desktop only, hidden on mobile)
+   - Dot indicators (visible on both desktop and mobile)
+   - Swipe gestures (mobile touch devices)
+
+3. Modern Transitions
+   - Fade out/in animations for content (0.4s)
+   - Background image transitions (0.6s)
+   - Staggered content animations (badge, note, countdown, button)
+   - Glowing active dot with scale effect
+
+4. Mobile Optimization
+   - Navigation arrows hidden on screens ≤576px
+   - Dot indicators always visible
+   - Swipe left/right to navigate
+   - Swipe hint displayed on first visit (hides after first swipe)
+
+5. Single Offer Handling
+   - When only one offer exists:
+     - Navigation arrows hidden
+     - Dots hidden on desktop, shown on mobile
+     - Swipe hint hidden
+     - Carousel container displayed without transitions
+
+Implementation Details:
+----------------------
+CSS Classes Used:
+- `.offers-banner` - Main container
+- `.offers-bg` - Background image container with fade transitions
+- `.offers-container` - Content wrapper with fade-in/out classes
+- `.carousel-arrow` - Navigation arrows
+- `.carousel-dots` - Dot indicator container
+- `.carousel-dot` - Individual dot (active state with glow effect)
+- `.swipe-hint` - Mobile swipe indicator
+
+JavaScript Functions:
+- `initOffersCarousel()` - Initializes carousel on page load
+- `initSwipeEvents()` - Sets up touch event listeners
+- `renderCurrentOffer()` - Renders offer with fade transitions
+- `showOffer(index)` - Shows specific offer
+- `nextOffer()` - Advances to next offer
+- `prevOffer()` - Goes to previous offer
+- `startOfferAutoAdvance()` - Starts 6-second auto-advance timer
+
+Responsive Breakpoints:
+-----------------------
+| Breakpoint    | Width      | Arrows | Dots | Swipe |
+|---------------|------------|--------|------|-------|
+| Desktop       | >576px     | Show   | Show | No    |
+| Mobile        | ≤576px     | Hide   | Show | Yes   |
+
+================================================================================
+                          8. SECURITY IMPLEMENTATION
 ================================================================================
 
 XSS Protection:
@@ -387,7 +371,7 @@ Image Security:
 - Broken image fallback to local placeholder
 
 ================================================================================
-                        8. RESPONSIVE DESIGN
+                        9. RESPONSIVE DESIGN
 ================================================================================
 
 Breakpoints:
@@ -420,7 +404,7 @@ Touch Support:
 - Passive event listeners for scroll
 
 ================================================================================
-                          9. SEO OPTIMIZATION
+                          10. SEO OPTIMIZATION
 ================================================================================
 
 Meta Tags:
@@ -456,7 +440,7 @@ Robots.txt:
 - Sitemap reference
 
 ================================================================================
-                       10. PERFORMANCE OPTIMIZATION
+                        11. PERFORMANCE OPTIMIZATION
 ================================================================================
 
 Image Optimization:
@@ -489,7 +473,7 @@ Loading Strategy:
 - Preloader animation
 
 ================================================================================
-                        11. DEPLOYMENT GUIDE
+                        12. DEPLOYMENT GUIDE
 ================================================================================
 
 Hosting Platform: Netlify
@@ -504,21 +488,13 @@ Manual Deployment:
 2. Upload to Netlify drop
 3. Or use any static hosting provider
 
-Environment Variables (if needed):
----------------------------------
-Not required for current implementation.
-
-Build Process:
---------------
-No build process required. Pure static files.
-
 Domain Configuration:
 ---------------------
 Domain: browzclothing.netlify.app
 Custom domain can be added in Netlify dashboard.
 
 ================================================================================
-                          12. OWNER MANUAL
+                          13. OWNER MANUAL
 ================================================================================
 
 Adding New Products:
@@ -563,7 +539,7 @@ Updating Prices:
 5. Refresh website
 
 ================================================================================
-                         13. TROUBLESHOOTING
+                          14. TROUBLESHOOTING
 ================================================================================
 
 Products Not Loading:
@@ -601,8 +577,53 @@ Cache Issues:
 3. Incognito mode test
 
 ================================================================================
-                            14. CHANGELOG
+                  15. KNOWN ISSUES & RECOMMENDATIONS
 ================================================================================
+
+CSS File Size:
+--------------
+The styles.css file is approximately 6300 lines due to duplicate CSS rules.
+The following duplications were identified:
+- `.product-card` class defined twice
+- `.footer-logo .logo-img` defined twice
+- `.back-to-top` class defined twice
+- Multiple complete media query blocks duplicated
+
+Recommendation: Clean up duplicate CSS rules to reduce file size by ~40-50%.
+This will improve:
+- Page load time
+- CSS parsing speed
+- Code maintainability
+
+================================================================================
+                             16. CHANGELOG
+================================================================================
+
+Version 2.1 - April 6, 2026
+---------------------------
+[ENHANCEMENT] Offers Carousel Improvements
+- Changed auto-slide interval from 8 to 6 seconds
+- Added modern fade transitions for content and background
+- Implemented staggered animation for carousel elements
+- Added glowing effect for active dot indicator
+- Implemented hover pause for auto-advance
+
+[MOBILE] Touch Support
+- Added swipe navigation for mobile devices
+- Hidden navigation arrows on mobile (≤576px)
+- Dots always visible on both desktop and mobile
+- Swipe hint shows on mobile, hides after first swipe
+- Single offer handling (no arrows/dots/swipe on single offer)
+
+[FIX] CSS Cleanup
+- Removed duplicate .product-card cursor style
+- Removed duplicate .footer-logo .logo-img definition
+- Started cleanup of duplicate CSS blocks
+
+[DOC] Documentation Updated
+- Updated PROJECT_REPORT.txt with carousel details
+- Documented mobile behavior and breakpoints
+- Added troubleshooting for swipe issues
 
 Version 2.0 - April 5, 2026
 ---------------------------
@@ -633,8 +654,8 @@ Version 1.x - Previous Releases
                               END OF REPORT
 ================================================================================
 
-Report Generated: April 5, 2026
+Report Generated: April 6, 2026
 Prepared By: Professional Development Team
-For: Browz Clothing / Mr. Nila Tex
+For: Browz Clothing
 
 ================================================================================

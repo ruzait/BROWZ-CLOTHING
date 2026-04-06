@@ -1,4 +1,4 @@
-# Mr. Nila Tex (Browz Clothing)
+# Browz Clothing
 
 Premium Clothing & Textile Showroom website for Addalaichenai, Sri Lanka.
 
@@ -31,9 +31,16 @@ Premium Clothing & Textile Showroom website for Addalaichenai, Sri Lanka.
 ### Offers Carousel (Excel-Powered)
 - **Owner-Friendly** - Add offers via Google Sheets (no code changes)
 - **Multiple Offers** - Support for multiple active offers
-- **Auto-Sliding** - Automatic carousel advancement
+- **Auto-Sliding** - Automatic carousel advancement (6 seconds)
 - **Countdown Timer** - Per-offer countdown with auto-switch
-- **Manual Navigation** - Hover arrows and dot indicators
+- **Manual Navigation** - Desktop: arrows + dots | Mobile: swipe + dots
+- **Mobile Swipe** - Swipe left/right to navigate on touch devices
+- **Swipe Hint** - Visual hint for mobile users (hides after first swipe)
+- **Hover Pause** - Auto-slide pauses on hover
+- **Smooth Transitions** - Fade out/in animations for content
+- **Staggered Animation** - Badge, note, countdown, button animate in sequence
+- **Glowing Dots** - Active dot has glow + scale effect
+- **Responsive Design** - Optimized for all devices
 
 ---
 
@@ -189,7 +196,7 @@ const CONFIG = {
 
 ## License
 
-All rights reserved. Mr. Nila Tex / Browz Clothing
+All rights reserved. Browz Clothing
 
 ---
 

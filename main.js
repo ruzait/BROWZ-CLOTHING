@@ -203,14 +203,18 @@ function initOffersCarousel() {
     const prevBtn = document.querySelector('.carousel-prev');
     const nextBtn = document.querySelector('.carousel-next');
     const dotsContainer = document.getElementById('carouselDots');
-
+    const container = document.querySelector('.offers-container');
+    const swipeHint = document.querySelector('.swipe-hint');
+    const isMobile = window.innerWidth <= 576;
+    
     if (offers.length === 1) {
         if (prevBtn) prevBtn.style.display = 'none';
         if (nextBtn) nextBtn.style.display = 'none';
-        if (dotsContainer) dotsContainer.style.display = 'none';
+        if (dotsContainer) dotsContainer.style.display = isMobile ? 'flex' : 'none';
+        if (swipeHint) swipeHint.style.display = 'none';
     } else {
-        if (prevBtn) prevBtn.style.display = 'flex';
-        if (nextBtn) nextBtn.style.display = 'flex';
+        if (prevBtn) prevBtn.style.display = isMobile ? 'none' : 'flex';
+        if (nextBtn) nextBtn.style.display = isMobile ? 'none' : 'flex';
         
         if (dotsContainer) {
             dotsContainer.innerHTML = offers.map((_, i) => 
@@ -218,44 +222,105 @@ function initOffersCarousel() {
             ).join('');
             dotsContainer.style.display = 'flex';
         }
+        
+        if (swipeHint) swipeHint.style.display = isMobile ? 'flex' : 'none';
     }
 
-    initOffersSwipe();
+    if (container) {
+        container.classList.add('fade-in');
+    }
+
+    const offersBanner = document.querySelector('.offers-banner');
+    if (offersBanner) {
+        offersBanner.addEventListener('mouseenter', () => {
+            if (offerCarouselInterval) {
+                clearInterval(offerCarouselInterval);
+                offerCarouselInterval = null;
+            }
+        });
+        offersBanner.addEventListener('mouseleave', () => {
+            startOfferAutoAdvance();
+        });
+    }
+
+    initSwipeEvents();
     renderCurrentOffer();
     startOfferAutoAdvance();
 }
 
-function initOffersSwipe() {
-    const slidesContainer = document.querySelector('.offers-slides');
-    if (!slidesContainer) return;
+function initSwipeEvents() {
+    const slider = document.querySelector('.offers-banner');
+    const swipeHint = document.querySelector('.swipe-hint');
+    if (!slider) return;
     
     let touchStartX = 0;
+    let touchStartY = 0;
     let touchEndX = 0;
+    let touchEndY = 0;
     const minSwipeDistance = 50;
+    let isSwiping = false;
+    let hasSwipedOnce = sessionStorage.getItem('browz_swiped') === 'true';
     
-    slidesContainer.addEventListener('touchstart', (e) => {
-        touchStartX = e.changedTouches[0].screenX;
-    }, { passive: true });
-    
-    slidesContainer.addEventListener('touchend', (e) => {
-        touchEndX = e.changedTouches[0].screenX;
-        handleSwipe();
-    }, { passive: true });
-    
-    function handleSwipe() {
-        const swipeDistance = touchEndX - touchStartX;
-        
-        if (swipeDistance > minSwipeDistance) {
-            prevOffer();
-        } else if (swipeDistance < -minSwipeDistance) {
-            nextOffer();
-        }
+    if (hasSwipedOnce && swipeHint) {
+        swipeHint.style.display = 'none';
     }
+    
+    slider.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+        isSwiping = true;
+        
+        if (offerCarouselInterval) {
+            clearInterval(offerCarouselInterval);
+            offerCarouselInterval = null;
+        }
+    }, { passive: true });
+    
+    slider.addEventListener('touchmove', (e) => {
+        if (!isSwiping) return;
+        touchEndX = e.changedTouches[0].screenX;
+        touchEndY = e.changedTouches[0].screenY;
+    }, { passive: true });
+    
+    slider.addEventListener('touchend', (e) => {
+        if (!isSwiping) return;
+        isSwiping = false;
+        
+        touchEndX = e.changedTouches[0].screenX;
+        touchEndY = e.changedTouches[0].screenY;
+        
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+        
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
+            if (!hasSwipedOnce) {
+                hasSwipedOnce = true;
+                sessionStorage.setItem('browz_swiped', 'true');
+                if (swipeHint) {
+                    swipeHint.style.opacity = '0';
+                    setTimeout(() => {
+                        swipeHint.style.display = 'none';
+                    }, 300);
+                }
+            }
+            
+            if (deltaX > 0) {
+                prevOffer();
+            } else {
+                nextOffer();
+            }
+        }
+        
+        setTimeout(() => {
+            startOfferAutoAdvance();
+        }, 1000);
+    }, { passive: true });
 }
 
 function renderCurrentOffer() {
     const offer = offers[currentOfferIndex];
     const container = document.querySelector('.offers-container');
+    const bgContainer = document.querySelector('.offers-bg');
     if (!container || !offer) return;
 
     const badgeEl = container.querySelector('.offers-badge .badge-text');
@@ -265,23 +330,32 @@ function renderCurrentOffer() {
     const bgImg = document.querySelector('.offers-bg img');
     const ctaBtn = container.querySelector('.btn');
 
-    if (badgeEl) badgeEl.textContent = offer.badgeText || '';
-    if (titleEl) titleEl.textContent = offer.title || '';
-    if (subtitleEl) subtitleEl.innerHTML = offer.subtitle || '';
-    if (countdownNoteEl) countdownNoteEl.textContent = 'Limited time offer - Don\'t miss out!';
-    if (bgImg) bgImg.src = offer.backgroundImage || '';
-    if (ctaBtn) {
-        ctaBtn.innerHTML = '<span>Visit Showroom</span><i class="fas fa-store"></i>';
-    }
+    container.classList.remove('fade-in');
+    container.classList.add('fade-out');
 
-    const dots = document.querySelectorAll('.carousel-dot');
-    dots.forEach((dot, i) => dot.classList.toggle('active', i === currentOfferIndex));
+    setTimeout(() => {
+        if (badgeEl) badgeEl.textContent = offer.badgeText || '';
+        if (titleEl) titleEl.textContent = offer.title || '';
+        if (subtitleEl) subtitleEl.innerHTML = offer.subtitle || '';
+        if (countdownNoteEl) countdownNoteEl.textContent = 'Limited time offer - Don\'t miss out!';
+        if (bgImg) bgImg.src = offer.backgroundImage || '';
+        if (ctaBtn) {
+            ctaBtn.innerHTML = '<span>Visit Showroom</span><i class="fas fa-store"></i>';
+        }
 
-    resetOfferTimer();
+        container.classList.remove('fade-out');
+        container.classList.add('fade-in');
+
+        const dots = document.querySelectorAll('.carousel-dot');
+        dots.forEach((dot, i) => dot.classList.toggle('active', i === currentOfferIndex));
+
+        resetOfferTimer();
+    }, 300);
 }
 
 function showOffer(index) {
     if (offers.length === 0 || index < 0 || index >= offers.length) return;
+    if (index === currentOfferIndex) return;
     
     currentOfferIndex = index;
     renderCurrentOffer();
@@ -307,7 +381,7 @@ function prevOffer() {
 function startOfferAutoAdvance() {
     if (offerCarouselInterval) clearInterval(offerCarouselInterval);
     if (offers.length > 1) {
-        offerCarouselInterval = setInterval(nextOffer, 8000);
+        offerCarouselInterval = setInterval(nextOffer, 6000);
     }
 }
 
@@ -322,10 +396,7 @@ function resetOfferTimer() {
     const offer = offers[currentOfferIndex];
     const countdownDateObj = new Date(offer.endDate);
     
-    if (isNaN(countdownDateObj.getTime())) {
-        showOfferEndedMessage();
-        return;
-    }
+    if (isNaN(countdownDateObj.getTime())) return;
     
     let countdownDate = countdownDateObj.getTime();
     
@@ -341,7 +412,6 @@ function resetOfferTimer() {
         if (distance <= 0) {
             clearInterval(countdownIntervalId);
             countdownIntervalId = null;
-            showOfferEndedMessage();
             return;
         }
         
@@ -358,57 +428,6 @@ function resetOfferTimer() {
     
     update();
     countdownIntervalId = setInterval(update, 1000);
-}
-
-function showOfferEndedMessage() {
-    if (offers.length > 1) {
-        const nextActiveOffer = offers.find((o, i) => i !== currentOfferIndex && new Date(o.endDate) > new Date());
-        if (nextActiveOffer) {
-            currentOfferIndex = offers.indexOf(nextActiveOffer);
-            renderCurrentOffer();
-            return;
-        }
-    }
-    
-    const container = document.querySelector('.offers-container');
-    if (!container) return;
-    
-    const countdown = container.querySelector('.countdown');
-    if (countdown) countdown.style.display = 'none';
-    
-    const prevBtn = document.querySelector('.carousel-prev');
-    const nextBtn = document.querySelector('.carousel-next');
-    const dotsContainer = document.getElementById('carouselDots');
-    
-    if (prevBtn) prevBtn.style.display = 'none';
-    if (nextBtn) nextBtn.style.display = 'none';
-    if (dotsContainer) dotsContainer.style.display = 'none';
-    
-    container.innerHTML = `
-        <div class="offer-ended">
-            <div class="offer-ended-badge">
-                <i class="fas fa-bell"></i>
-                <span>All Offers Ended</span>
-            </div>
-            <h2 class="offer-ended-title">Current Offers Have Ended!</h2>
-            <p class="offer-ended-subtitle">
-                Stay tuned for new exciting deals.<br>
-                Contact us for the latest offers.
-            </p>
-            <div class="offer-ended-buttons">
-                <a href="#contact" class="btn btn-primary">
-                    <span>Contact Us</span>
-                    <i class="fas fa-envelope"></i>
-                </a>
-                <a href="collections.html" class="btn btn-outline">
-                    <span>View Products</span>
-                    <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
-        </div>
-    `;
-    
-    if (typeof AOS !== 'undefined') AOS.refresh();
 }
 
 const NEW_CATEGORY_COLORS = [
