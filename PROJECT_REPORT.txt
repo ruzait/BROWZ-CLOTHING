@@ -1,13 +1,13 @@
 ================================================================================
                     PROJECT REPORT: BROWZ CLOTHING WEBSITE
-                              Premium E-Commerce Platform
-                              Version 2.1 - April 2026
+                          Premium E-Commerce Platform
+                              Version 2.2 - April 2026
 ================================================================================
 
 Project: Browz Clothing
 Website: https://browzclothing.netlify.app
 Location: Addalaichenai, Eastern Province, Sri Lanka
-Last Updated: April 6, 2026
+Last Updated: April 7, 2026
 Developer: Professional Web Development Team
 
 ================================================================================
@@ -18,18 +18,26 @@ Developer: Professional Web Development Team
 2. Project Overview
 3. Technology Stack
 4. Architecture & File Structure
-5. Google Sheets Integration
-6. Core Features
-7. Offers Carousel System (Enhanced)
-8. Security Implementation
-9. Responsive Design
-10. SEO Optimization
-11. Performance Optimization
-12. Deployment Guide
-13. Owner Manual
-14. Troubleshooting
-15. Known Issues & Recommendations
-16. Changelog
+5. Pages Overview
+6. Google Sheets Integration
+7. Core Features
+8. Discount System
+9. Product Management
+10. Offers Carousel System
+11. WhatsApp Integration
+12. Search & Filtering
+13. Navigation & UI Components
+14. Security Implementation
+15. Analytics & Tracking
+16. SEO Optimization
+17. Responsive Design
+18. PWA Features
+19. Performance Optimization
+20. Deployment Guide
+21. Owner Manual
+22. Troubleshooting
+23. Known Issues & Recommendations
+24. Changelog
 
 ================================================================================
                           1. EXECUTIVE SUMMARY
@@ -44,10 +52,13 @@ Key Achievements:
 - Fully responsive design for all devices
 - Zero-dependency data management via Google Sheets
 - Integrated WhatsApp ordering system
-- Professional SEO implementation
+- Professional SEO implementation with Schema.org markup
 - High-performance lazy loading
 - Enterprise-grade security measures
 - Enhanced offers carousel with modern animations
+- Intelligent discount calculation system
+- PWA-ready with service worker support
+- Google Analytics and Tag Manager integration
 
 ================================================================================
                           2. PROJECT OVERVIEW
@@ -74,6 +85,13 @@ Product Categories:
 - Kids Wear
 - Textiles & Fabrics
 
+Social Media:
+-------------
+- Facebook: https://www.facebook.com/share/18XuoTLpjp/
+- Instagram: https://instagram.com/browzclothing
+- TikTok: https://tiktok.com/@browzclothing
+- WhatsApp: https://wa.me/94757034999
+
 ================================================================================
                           3. TECHNOLOGY STACK
 ================================================================================
@@ -94,6 +112,11 @@ PapaParse     | v5.4.1 - CSV parsing for Google Sheets integration
 LocalStorage  | Client-side caching (5-minute TTL)
 SessionStorage| Offers data caching
 
+Analytics & Tracking:
+--------------------
+Google Analytics | G-5BQ3DEGRW8 - Traffic and behavior tracking
+Google Tag Manager | GTM-WHNFG77G - Tag management
+
 External Services:
 ------------------
 Netlify       | Hosting and continuous deployment
@@ -110,37 +133,97 @@ Root Directory:
 ├── index.html           Home page with hero, products showcase, offers
 ├── collections.html     Full product listing with filters and search
 ├── product.html         Dynamic product detail page (?id=X)
-├── main.js              Core JavaScript (~1800 lines)
-├── styles.css           Complete stylesheet (~6300 lines - needs cleanup)
-├── Browz_Clothing.png  Logo (PNG format)
-├── Browz_Clothing.svg  Logo (SVG format)
-├── Browz_Clothing.ico  Favicon
-├── sitemap.xml          SEO sitemap
-├── robots.txt           Search engine directives
+├── 404.html             Custom 404 error page
+├── main.js              Core JavaScript (~2000 lines)
+├── styles.css           Complete stylesheet (~7300 lines)
+├── sw.js                Service Worker for PWA support
 ├── netlify.toml         Deployment configuration
+├── robots.txt           Search engine directives
+├── sitemap.xml          SEO sitemap
 ├── README.md            Quick reference documentation
-└── PROJECT_REPORT.txt  This comprehensive report
-
-Images Directory:
-----------------
-images/
-├── products/            Product-specific images (if any)
-├── sections/            Section backgrounds and banners
-│   ├── hero-1.jpg       Hero slider image 1
-│   ├── hero-2.jpg       Hero slider image 2
-│   ├── hero-3.jpg       Hero slider image 3
-│   ├── category-men.jpg  Men's category image
-│   ├── category-kids.jpg Kids category image
-│   ├── about-main.jpg    About section main image
-│   ├── about-secondary.jpg About section secondary image
-│   ├── testimonial-1.jpg Customer testimonial 1
-│   ├── testimonial-2.jpg Customer testimonial 2
-│   ├── testimonial-3.jpg Customer testimonial 3
-│   └── og-image.jpg     Social media sharing image
-└── placeholder.svg      Image load error fallback
+├── PROJECT_REPORT.txt   This comprehensive report
+├── SEO_SETUP_GUIDE.md   SEO implementation guide
+├── Browz_Clothing.png   Logo (PNG format - 800x275px)
+├── Browz_Clothing.svg   Logo (SVG format)
+├── Browz_Clothing.ico   Favicon
+├── favicon/
+│   ├── favicon.ico
+│   ├── favicon.svg
+│   ├── favicon-96x96.png
+│   ├── apple-touch-icon.png
+│   ├── site.webmanifest
+│   ├── web-app-manifest-192x192.png
+│   └── web-app-manifest-512x512.png
+└── images/
+    ├── Browz_Clothing.png
+    ├── placeholder.svg
+    └── sections/
+        ├── hero-1.jpg              Hero slider image 1
+        ├── hero-2.jpg              Hero slider image 2
+        ├── hero-3.jpg              Hero slider image 3
+        ├── category-men.jpg        Men's category image
+        ├── category-women.jpg      Women's category image
+        ├── category-kids.jpg       Kids category image
+        ├── category-fabric.jpg     Fabric category image
+        ├── about-main.jpg          About section main image
+        ├── about-secondary.jpg     About section secondary image
+        ├── testimonial-1.jpg       Customer testimonial 1
+        ├── testimonial-2.jpg       Customer testimonial 2
+        ├── testimonial-3.jpg       Customer testimonial 3
+        ├── og-image.jpg            Social media sharing image
+        └── ramadan-sale.jpg        Special offer banner
 
 ================================================================================
-                      5. GOOGLE SHEETS INTEGRATION
+                            5. PAGES OVERVIEW
+================================================================================
+
+Home Page (index.html)
+----------------------
+Sections:
+- Preloader animation
+- Navigation bar (fixed)
+- Hero slider (3 slides with auto-advance)
+- Features bar (4 feature highlights)
+- Offers carousel (promotional banners)
+- Categories grid (3 categories)
+- Products showcase (featured products)
+- About section (with experience counter)
+- Testimonials slider
+- Contact section (map + form)
+- Footer
+- Floating WhatsApp button
+- Back to top button
+
+Collections Page (collections.html)
+---------------------------------
+Features:
+- Page header with breadcrumb
+- Product filter buttons
+- Price range slider
+- Product grid with pagination
+- Load more functionality
+- Search overlay
+
+Product Detail Page (product.html)
+---------------------------------
+Features:
+- Product images with gallery
+- Product information display
+- Price with discount
+- Color options
+- WhatsApp order button
+- Related products section
+- Dynamic Schema.org markup
+
+404 Page (404.html)
+------------------
+Features:
+- Custom error message
+- Navigation back to home
+- Consistent branding
+
+================================================================================
+                      6. GOOGLE SHEETS INTEGRATION
 ================================================================================
 
 Overview:
@@ -156,6 +239,18 @@ Data Security Model:
 - No direct database connection required
 - Authentication handled by Google
 
+Products Sheet Configuration:
+----------------------------
+Sheet ID: 2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw
+GID: 1503251048
+Published URL: https://docs.google.com/spreadsheets/d/e/2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw/pub?gid=1503251048&single=true&output=csv
+
+Offers Sheet Configuration:
+---------------------------
+Sheet ID: 2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw
+GID: 291050963
+Published URL: https://docs.google.com/spreadsheets/d/e/2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw/pub?gid=291050963&single=true&output=csv
+
 Configuration (main.js):
 ------------------------
 ```javascript
@@ -168,51 +263,31 @@ const CONFIG = {
     CURRENCY: 'Rs.',
     CURRENCY_SYMBOL: 'Rs. ',
     PRODUCT_CODE_PREFIX: 'BC',
-    CACHE_TTL: 5 * 60 * 1000,  // 5 minutes
-    // ...
+    EXPERIENCE_SUFFIX: 'Years',
+    SHOW_DISCOUNT_PERCENT: true,
+    SHOW_BADGE: true,
+    SHOW_ADD_TO_CART: false,
+    GLOBAL_DISCOUNT: 0,
+    CACHE_TTL: 5 * 60 * 1000,
+    CACHE_KEY: 'browzclothing_products',
+    CACHE_TIME_KEY: 'browzclothing_products_time',
+    OFFERS_CACHE_KEY: 'browzclothing_offers',
+    OFFERS_CACHE_TIME_KEY: 'browzclothing_offers_time',
+    PRICE_COLORS: {
+        DEFAULT: '#111111',
+        OLD_PRICE: '#888888',
+        DISCOUNT_GOLD: '#c9a959',
+        DISCOUNT_MEDIUM: '#e67e22',
+        DISCOUNT_HIGH: '#e74c3c',
+        DISCOUNT_SUPER: '#27ae60'
+    },
+    DISCOUNT_THRESHOLDS: {
+        SUPER: 50,
+        HIGH: 30,
+        MEDIUM: 15
+    }
 };
 ```
-
-Products Sheet Configuration:
-----------------------------
-Sheet ID: 2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw
-GID: 1503251048
-Published URL: https://docs.google.com/spreadsheets/d/e/2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw/pub?gid=1503251048&single=true&output=csv
-
-Products Sheet Columns:
------------------------
-| Column Name      | Required | Description                          |
-|-----------------|----------|--------------------------------------|
-| Product Name    | Yes      | Product title (also accepts: Name)   |
-| Price           | Yes      | Current price in Rs.                 |
-| Old Price       | No       | Original price (for discount calc)   |
-| Discount %      | No       | Manual discount percentage            |
-| Front Image     | No       | Google Drive URL or direct URL        |
-| Back Image      | No       | Google Drive URL for flip effect      |
-| Category        | No       | men, women, kids, fabric, etc.       |
-| Badge           | No       | new, hot, sale, trend, etc.         |
-| Description     | No       | Product description text              |
-| Brand           | No       | Brand name                           |
-| Item Code       | No       | Custom product code                  |
-| Colors          | No       | Comma-separated (Red, Blue, White)    |
-| Timestamp       | No       | Auto-sort by newest (MM/DD/YYYY HH)  |
-
-Offers Sheet Configuration:
----------------------------
-Sheet ID: 2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw
-GID: 291050963
-Published URL: https://docs.google.com/spreadsheets/d/e/2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw/pub?gid=291050963&single=true&output=csv
-
-Offers Sheet Columns:
----------------------
-| Column Name       | Required | Description                                      |
-|------------------|----------|--------------------------------------------------|
-| background_image | Yes      | Full URL to banner image (https://...)           |
-| end_date         | Yes      | End date (ISO: 2026-05-27T23:59:59 or US: 5/27/2026 23:59:59) |
-| is_active        | Yes      | "Yes" or "No" (case-insensitive)                  |
-| badge_text       | No       | Short badge (e.g., "Ramadan Offer")              |
-| title            | No       | Main offer headline                              |
-| subtitle         | No       | Description (supports HTML: <span class="highlight">) |
 
 Caching Strategy:
 -----------------
@@ -222,22 +297,22 @@ Caching Strategy:
 - Graceful fallback to expired cache on network failure
 
 ================================================================================
-                             6. CORE FEATURES
+                            7. CORE FEATURES
 ================================================================================
 
 Product Management:
 ------------------
 1. Dynamic Loading
    - Products loaded from Google Sheets via CSV
-   - Automatic parsing with PapaParse
+   - Custom CSV parser (PapaParse not used in final version)
    - Validation of required fields
    - Error handling with console logging
 
 2. Sorting & Filtering
-   - Sort by timestamp (newest first)
    - Filter by category
-   - Filter by price range
+   - Filter by price range (dual-handle slider)
    - Real-time search across all fields
+   - Debounced search (300ms)
 
 3. Display Features
    - Image flip effect on hover (when both images available)
@@ -245,39 +320,155 @@ Product Management:
    - Placeholder for broken images
    - Dynamic badge colors based on keyword
 
-4. Discount System
-   Priority: Global Discount > Calculated > Sheet Value
-   
-   Badge Colors by Discount Level:
-   - SUPER (≥50%): Green (#27ae60)
-   - HIGH (≥30%): Red (#e74c3c)
-   - MEDIUM (≥15%): Orange (#e67e22)
-   - Default (<15%): Gold (#c9a959)
-
-WhatsApp Integration:
----------------------
-1. Order Button
-   - Pre-filled message with product details
-   - Product name, price, discount
-   - Color selection
-   - Item code reference
-   - Direct link to product image
-
-2. Floating Button
-   - Appears after scrolling past hero
-   - Direct chat link
-   - Custom greeting message
-
-3. Contact Form
-   - Name, phone, email fields
-   - Message textarea
-   - WhatsApp submission
+4. Pagination
+   - Load more button on collections page
+   - Efficient product rendering
 
 ================================================================================
-                    7. OFFERS CAROUSEL SYSTEM (ENHANCED)
+                          8. DISCOUNT SYSTEM
 ================================================================================
 
-The offers carousel has been enhanced with modern transitions and mobile support.
+Overview:
+---------
+The discount system uses a two-layer calculation approach with automatic 
+override capability. This ensures customers always see accurate discount 
+percentages based on real price differences.
+
+Layer 1: Product Loading (Data Processing)
+------------------------------------------
+When products are loaded from Google Sheets, the system calculates the 
+discount percentage automatically using the formula:
+
+    Discount % = (Old Price - Current Price) / Old Price × 100
+
+This calculated value becomes the product's final discount, regardless of 
+what discount value exists in the sheet.
+
+Console Warning System:
+-----------------------
+If the sheet's discount percentage doesn't match the calculated value, 
+a warning appears in the console:
+
+    "Discount in sheet (10%) doesn't match calculation based on 
+    Rs.900 vs Rs.1000. Updated to 10%."
+
+Implementation (main.js:918-928):
+---------------------------------
+```javascript
+const oldPrice = parseFloat(row['Old Price'] || 0) || null;
+const sheetDiscount = parseFloat(row['Discount %'] || 0) || 0;
+let calculatedDiscount = 0;
+
+if (oldPrice && oldPrice > price) {
+    calculatedDiscount = Math.round(((oldPrice - price) / oldPrice) * 100);
+    if (sheetDiscount > 0 && Math.abs(calculatedDiscount - sheetDiscount) > 1) {
+        console.warn(`Discount in sheet (${sheetDiscount}%) doesn't match 
+            calculation based on Rs.${price} vs Rs.${oldPrice}. 
+            Updated to ${calculatedDiscount}%.`);
+    }
+}
+```
+
+Layer 2: Display Logic (GLOBAL_DISCOUNT Override)
+------------------------------------------------
+When rendering products, the system checks if GLOBAL_DISCOUNT is greater 
+than zero. If set, it completely overrides both the displayed discount 
+percentage and the current price, applying the global discount to all products.
+
+Display Priority:
+----------------
+1. GLOBAL_DISCOUNT > 0: All products use global discount
+2. GLOBAL_DISCOUNT = 0: Each product uses calculated discount
+
+Affected Functions:
+-------------------
+- renderProducts() - Product grid on collections page
+- renderHomeProducts() - Featured products on home page
+- renderProductDetail() - Single product detail page
+- renderFeaturedProducts() - Featured products section
+- handleWhatsAppClick() - WhatsApp order message
+
+Product Object Structure:
+------------------------
+| Field             | Type   | Description                              |
+|-------------------|--------|------------------------------------------|
+| price             | number | Current selling price                    |
+| oldPrice          | number | Original price (can be null)              |
+| discount          | number | Calculated discount % (displayed)        |
+| originalDiscount  | number | Sheet discount % (for reference only)    |
+
+Badge Colors by Discount Level:
+-------------------------------
+| Level   | Threshold    | Color     | Hex Code  |
+|---------|--------------|-----------|-----------|
+| SUPER   | >= 50%       | Green     | #27ae60   |
+| HIGH    | >= 30%       | Red       | #e74c3c   |
+| MEDIUM  | >= 15%       | Orange    | #e67e22   |
+| Default | < 15%        | Gold      | #c9a959   |
+
+================================================================================
+                         9. PRODUCT MANAGEMENT
+================================================================================
+
+Products Sheet Columns:
+-----------------------
+| Column Name      | Required | Description                          |
+|-----------------|----------|--------------------------------------|
+| Product Name    | Yes      | Product title (also accepts: Name)   |
+| Price           | Yes      | Current price in Rs.                 |
+| Old Price       | No       | Original price (for discount calc)   |
+| Discount %      | No       | Sheet discount (calculated override) |
+| Front Image     | No       | Google Drive URL or direct URL        |
+| Back Image      | No       | Google Drive URL for flip effect      |
+| Category        | No       | men, women, kids, fabric, etc.       |
+| Badge           | No       | new, hot, sale, trend, etc.          |
+| Description     | No       | Product description text              |
+| Brand           | No       | Brand name                           |
+| Item Code       | No       | Custom product code                  |
+| Colors          | No       | Comma-separated (Red, Blue, White)    |
+| Timestamp       | No       | Auto-sort by newest (MM/DD/YYYY HH)  |
+
+Default Products (Fallback):
+---------------------------
+When Google Sheets fails to load, these sample products are displayed:
+1. Premium Linen Shirt - Rs. 2,700 (16% off)
+2. Classic Cotton Kurtas - Rs. 3,500 (no discount)
+3. Designer Saree Collection - Rs. 8,500 (29% off)
+4. Kids Party Wear Set - Rs. 2,800 (20% off)
+5. Premium Silk Fabric - Rs. 5,500 (no discount)
+
+Product Card Display:
+--------------------
+- Product image with lazy loading
+- Image flip on hover (front/back)
+- Badge overlay (New, Hot, Sale, etc.)
+- Category and brand name
+- Product title (linked to detail page)
+- Current price with color coding
+- Old price with strikethrough
+- Discount percentage badge
+- WhatsApp order button
+
+Product Detail Page:
+--------------------
+- Large product image
+- Image gallery (if multiple images)
+- Product title and description
+- Category and brand
+- Item code
+- Available colors
+- Price with discount display
+- WhatsApp order button with pre-filled message
+- Related products (same category)
+
+================================================================================
+                     10. OFFERS CAROUSEL SYSTEM
+================================================================================
+
+Overview:
+---------
+The offers carousel displays promotional banners from Google Sheets with
+modern transitions and mobile support.
 
 Key Features:
 -------------
@@ -303,42 +494,194 @@ Key Features:
    - Swipe left/right to navigate
    - Swipe hint displayed on first visit (hides after first swipe)
 
-5. Single Offer Handling
-   - When only one offer exists:
-     - Navigation arrows hidden
-     - Dots hidden on desktop, shown on mobile
-     - Swipe hint hidden
-     - Carousel container displayed without transitions
+5. Countdown Timer
+   - Per-offer countdown display
+   - Days, Hours, Minutes, Seconds
+   - Auto-updates every second
 
-Implementation Details:
-----------------------
-CSS Classes Used:
-- `.offers-banner` - Main container
-- `.offers-bg` - Background image container with fade transitions
-- `.offers-container` - Content wrapper with fade-in/out classes
-- `.carousel-arrow` - Navigation arrows
-- `.carousel-dots` - Dot indicator container
-- `.carousel-dot` - Individual dot (active state with glow effect)
-- `.swipe-hint` - Mobile swipe indicator
+Offers Sheet Columns:
+---------------------
+| Column Name       | Required | Description                                      |
+|------------------|----------|--------------------------------------------------|
+| background_image | Yes      | Full URL to banner image (https://...)           |
+| end_date         | Yes      | End date (ISO: 2026-05-27T23:59:59 or US: 5/27/2026 23:59:59) |
+| is_active        | Yes      | "Yes" or "No" (case-insensitive)                  |
+| badge_text       | No       | Short badge (e.g., "Ramadan Offer")              |
+| title            | No       | Main offer headline                              |
+| subtitle         | No       | Description (supports HTML: <span class="highlight">) |
 
 JavaScript Functions:
-- `initOffersCarousel()` - Initializes carousel on page load
-- `initSwipeEvents()` - Sets up touch event listeners
-- `renderCurrentOffer()` - Renders offer with fade transitions
-- `showOffer(index)` - Shows specific offer
-- `nextOffer()` - Advances to next offer
-- `prevOffer()` - Goes to previous offer
-- `startOfferAutoAdvance()` - Starts 6-second auto-advance timer
-
-Responsive Breakpoints:
------------------------
-| Breakpoint    | Width      | Arrows | Dots | Swipe |
-|---------------|------------|--------|------|-------|
-| Desktop       | >576px     | Show   | Show | No    |
-| Mobile        | ≤576px     | Hide   | Show | Yes   |
+--------------------
+- initOffersCarousel() - Initializes carousel on page load
+- initSwipeEvents() - Sets up touch event listeners
+- renderCurrentOffer() - Renders offer with fade transitions
+- showOffer(index) - Shows specific offer
+- nextOffer() - Advances to next offer
+- prevOffer() - Goes to previous offer
+- startOfferAutoAdvance() - Starts 6-second auto-advance timer
+- updateCountdown() - Updates countdown timers
 
 ================================================================================
-                          8. SECURITY IMPLEMENTATION
+                       11. WHATSAPP INTEGRATION
+================================================================================
+
+WhatsApp Order Button:
+----------------------
+Each product has a WhatsApp order button that sends a pre-formatted message:
+
+Message Format:
+---------------
+```
+*Browz Clothing*
+━━━━━━━━━━━━━━━━━━━━━━
+
+*[Product Name]*
+*Color:* [Available Colors]
+
+*Price:* Rs. [Current Price]
+*Old Price:* ~~Rs. [Original Price]~~
+*Discount:* -[X]%
+
+*Code:* [Item Code]
+
+*Product Link:*
+[Image URL]
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Hi! I'm interested in this product. Is it available?
+```
+
+Floating WhatsApp Button:
+-------------------------
+- Fixed position (bottom-right)
+- Appears after page load
+- Tooltip on hover: "Chat with us!"
+- Direct link to WhatsApp with greeting message
+
+Contact Form Integration:
+-------------------------
+- Form fields: Name, Phone, Email, Message
+- Submit via WhatsApp button
+- Pre-formatted message with form data
+
+Configuration:
+--------------
+WHATSAPP_NUMBER: 94757034999
+
+================================================================================
+                      12. SEARCH & FILTERING
+================================================================================
+
+Search Features:
+---------------
+1. Global Search
+   - Search icon in navbar
+   - Full-screen search overlay
+   - Debounced input (300ms)
+   - Searches across: name, category, description, brand, colors
+
+2. Mobile Search
+   - Dedicated mobile search button
+   - Opens same search overlay
+
+3. Navbar Quick Search
+   - Compact search input in navbar
+   - Navigate to collections with query
+
+Filter Options:
+---------------
+1. Category Filter
+   - All, Men, Women, Kids, Fabrics
+   - Button-based toggle
+   - Active state styling
+
+2. Price Range Filter
+   - Dual-handle slider
+   - Min/Max price display
+   - Real-time filtering
+
+3. Combined Filtering
+   - Category + Price + Search work together
+   - Real-time results update
+
+Search Algorithm:
+----------------
+```javascript
+function matchesSearch(product, query) {
+    const q = query.toLowerCase();
+    return (
+        product.name.toLowerCase().includes(q) ||
+        product.category.toLowerCase().includes(q) ||
+        (product.description && product.description.toLowerCase().includes(q)) ||
+        (product.brand && product.brand.toLowerCase().includes(q)) ||
+        (product.colors && product.colors.some(c => c.toLowerCase().includes(q)))
+    );
+}
+```
+
+================================================================================
+                    13. NAVIGATION & UI COMPONENTS
+================================================================================
+
+Navigation Bar:
+---------------
+- Fixed position (sticky)
+- Logo (links to home)
+- Menu links: Home, Collections, Categories, Offers, About, Contact
+- Search input (navbar variant)
+- Mobile search button
+- Install app button
+- Mobile hamburger menu
+
+Mobile Menu:
+------------
+- Slide-in overlay from right
+- Full-height menu
+- Menu items with icons
+- Close button (X)
+- Touch-friendly links
+
+Hero Slider:
+------------
+- 3 slides with background images
+- Auto-advance (not configurable in current version)
+- Dot navigation
+- Overlay for text readability
+- Animated title and subtitle
+- CTA buttons
+
+Page Header:
+------------
+- Background image with overlay
+- Page title
+- Page subtitle
+- Breadcrumb navigation
+
+Footer:
+-------
+- 4-column grid (responsive)
+- Brand column with logo and description
+- Quick links column
+- Categories column
+- Contact info column
+- Social media icons
+- Copyright notice
+
+Back to Top Button:
+-------------------
+- Appears after scrolling 300px
+- Fixed bottom-right position
+- Smooth scroll to top on click
+
+Preloader:
+----------
+- Full-screen overlay
+- Animated logo text
+- Fades out on page load complete
+
+================================================================================
+                      14. SECURITY IMPLEMENTATION
 ================================================================================
 
 XSS Protection:
@@ -357,12 +700,11 @@ Email validation: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 Phone validation: /^[\d\s\-\+\(\)]{7,20}$/
 URL validation: Protocol check (http/https required)
 
-Null Safety:
-------------
-All DOM operations include null checks:
-```javascript
-if (element) { element.addEventListener(...) }
-```
+Content Security:
+-----------------
+- No inline scripts (except essential)
+- External resources from trusted CDNs
+- Google Fonts and CDN resources
 
 Image Security:
 ---------------
@@ -371,7 +713,89 @@ Image Security:
 - Broken image fallback to local placeholder
 
 ================================================================================
-                        9. RESPONSIVE DESIGN
+                     15. ANALYTICS & TRACKING
+================================================================================
+
+Google Analytics:
+-----------------
+Tracking ID: G-5BQ3DEGRW8
+Implementation: Global site tag (gtag.js)
+- Page views tracking
+- User behavior tracking
+- E-commerce ready structure
+
+Google Tag Manager:
+-------------------
+Container ID: GTM-WHNFG77G
+Implementation: Asynchronous snippet
+- Tag management
+- Event tracking ready
+- Conversion tracking ready
+
+Event Tracking Ready:
+---------------------
+- WhatsApp button clicks
+- Search queries
+- Filter usage
+- Product views (via URL parameters)
+
+================================================================================
+                         16. SEO OPTIMIZATION
+================================================================================
+
+Meta Tags:
+----------
+- Title tags with keywords
+- Meta descriptions (155 chars)
+- Open Graph tags for social sharing
+- Twitter Card meta tags
+- Canonical URLs
+- Geo tags for local SEO
+
+Structured Data (JSON-LD):
+--------------------------
+1. LocalBusiness Schema
+   - Name, description, URL
+   - Address (postalCode, geo coordinates)
+   - Contact information
+   - Opening hours
+   - Price range
+   - Accepted payment methods
+   - Social profiles
+
+2. Product Schema (product.html)
+   - Product name and description
+   - Image
+   - Brand
+   - Price and currency
+   - Availability
+   - Aggregate rating
+
+3. FAQPage Schema
+   - 6 common questions and answers
+   - Enhances search result appearance
+
+4. BreadcrumbList Schema
+   - Home > Collections > [Page]
+
+Sitemap:
+--------
+XML sitemap with priorities:
+- Homepage: 1.0
+- Collections: 0.9
+- Product pages: 0.8
+
+Robots.txt:
+-----------
+- Allow all crawlers
+- Sitemap reference
+
+Google Verification:
+--------------------
+Site verification token in meta tags.
+
+================================================================================
+                       17. RESPONSIVE DESIGN
 ================================================================================
 
 Breakpoints:
@@ -381,11 +805,6 @@ Laptop:    992-1200px (3 columns)
 Tablet:    768-992px (3 columns)
 Mobile:    <768px (2 columns, hamburger menu)
 Small:     <400px (optimized spacing)
-
-Navigation:
------------
-Desktop: Fixed navbar with full menu
-Mobile:  Hamburger menu with slide-in overlay
 
 Product Grid:
 -------------
@@ -402,45 +821,35 @@ Touch Support:
 - Swipe gestures for offers carousel
 - Touch-friendly buttons (min 44px)
 - Passive event listeners for scroll
+- Hamburger menu on mobile
 
 ================================================================================
-                          10. SEO OPTIMIZATION
+                        18. PWA FEATURES
 ================================================================================
 
-Meta Tags:
-----------
-- Title tags with keywords
-- Meta descriptions (155 chars)
-- Open Graph tags for social sharing
-- Twitter Card meta tags
-- Canonical URLs
+Service Worker (sw.js):
+-----------------------
+- Caches static assets
+- Offline page fallback
+- Cache-first strategy for images
+- Network-first for HTML
 
-Structured Data:
-----------------
-Schema.org LocalBusiness markup:
-- Name, description, URL
-- Address (postalCode, geo coordinates)
-- Contact information
-- Opening hours
-- Price range
-- Accepted payment methods
-- Social profiles
+Web App Manifest:
+-----------------
+- App name: Browz Clothing
+- Theme color: #1a1a1a
+- Background color: #1a1a1a
+- Display: standalone
+- Icons: Multiple sizes for all devices
 
-Sitemap:
---------
-XML sitemap with priorities:
-- Homepage: 1.0
-- Collections: 0.9
-- Sections: 0.8
-- Footer pages: 0.7
-
-Robots.txt:
------------
-- Allow all crawlers
-- Sitemap reference
+Install App Button:
+-------------------
+- Prompts PWA installation
+- Shows on supported browsers
+- Silent failure on unsupported browsers
 
 ================================================================================
-                        11. PERFORMANCE OPTIMIZATION
+                     19. PERFORMANCE OPTIMIZATION
 ================================================================================
 
 Image Optimization:
@@ -458,22 +867,23 @@ Code Optimization:
 - CSS animations (GPU accelerated)
 - Minimal DOM manipulation
 
+Loading Strategy:
+-----------------
+- Preconnect to Google Fonts
+- Preconnect to Font Awesome CDN
+- AOS library for scroll animations
+- Progressive enhancement
+- Preloader animation
+
 Caching:
 --------
 - 5-minute TTL for products
 - Session-based offers cache
 - LocalStorage fallback
-- No-cache headers for fresh data
-
-Loading Strategy:
------------------
-- Preconnect to Google Fonts
-- AOS library for scroll animations
-- Progressive enhancement
-- Preloader animation
+- Service worker caching
 
 ================================================================================
-                        12. DEPLOYMENT GUIDE
+                        20. DEPLOYMENT GUIDE
 ================================================================================
 
 Hosting Platform: Netlify
@@ -493,8 +903,20 @@ Domain Configuration:
 Domain: browzclothing.netlify.app
 Custom domain can be added in Netlify dashboard.
 
+Netlify Configuration (netlify.toml):
+-------------------------------------
+```toml
+[build]
+  publish = "/"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+```
+
 ================================================================================
-                          13. OWNER MANUAL
+                          21. OWNER MANUAL
 ================================================================================
 
 Adding New Products:
@@ -502,10 +924,11 @@ Adding New Products:
 1. Open your Products Google Sheet
 2. Add a new row with product information
 3. Ensure "Product Name" and "Price" columns are filled
-4. Add image URLs if available
-5. Save the sheet
-6. Wait 5 minutes or clear browser cache
-7. Refresh the website
+4. Add "Old Price" for automatic discount calculation
+5. Add image URLs if available
+6. Save the sheet
+7. Wait 5 minutes or clear browser cache
+8. Refresh the website
 
 Adding Promotional Offers:
 --------------------------
@@ -535,11 +958,33 @@ Updating Prices:
 1. Find the product row in Google Sheet
 2. Update the "Price" column
 3. Optionally update "Old Price" for discount display
-4. Discount is auto-calculated if Old Price exists
+4. Discount is automatically calculated from Old Price vs Price
 5. Refresh website
 
+Managing Discounts:
+------------------
+- Set "Old Price" to enable automatic discount calculation
+- "Discount %" column is optional (used for reference only)
+- System calculates: (Old Price - Price) / Old Price × 100
+- Console warnings appear if sheet discount differs from calculation
+- For store-wide discount, set GLOBAL_DISCOUNT in main.js
+
+Applying Global Discount:
+-------------------------
+1. Open main.js
+2. Find CONFIG object
+3. Set GLOBAL_DISCOUNT to desired percentage (e.g., 10 for 10%)
+4. Save and deploy
+5. All products will show the global discount
+
+Configuring WhatsApp:
+--------------------
+1. Open main.js
+2. Update WHATSAPP_NUMBER in CONFIG
+3. Save and deploy
+
 ================================================================================
-                          14. TROUBLESHOOTING
+                          22. TROUBLESHOOTING
 ================================================================================
 
 Products Not Loading:
@@ -570,6 +1015,13 @@ WhatsApp Not Working:
 2. Check browser allows opening WhatsApp links
 3. Mobile devices may require WhatsApp app installed
 
+Discount Not Showing:
+---------------------
+1. Ensure "Old Price" column has a value higher than "Price"
+2. Check browser console for discount calculation warnings
+3. Verify products are loading from Google Sheets (not cache)
+4. Clear browser cache and refresh
+
 Cache Issues:
 -------------
 1. Hard refresh: Ctrl+Shift+R (Windows) / Cmd+Shift+R (Mac)
@@ -577,16 +1029,16 @@ Cache Issues:
 3. Incognito mode test
 
 ================================================================================
-                  15. KNOWN ISSUES & RECOMMENDATIONS
+                  23. KNOWN ISSUES & RECOMMENDATIONS
 ================================================================================
 
 CSS File Size:
 --------------
-The styles.css file is approximately 6300 lines due to duplicate CSS rules.
+The styles.css file is approximately 7300 lines due to some duplicate CSS rules.
 The following duplications were identified:
-- `.product-card` class defined twice
-- `.footer-logo .logo-img` defined twice
-- `.back-to-top` class defined twice
+- `.product-card` class defined multiple times
+- `.footer-logo .logo-img` defined multiple times
+- `.back-to-top` class defined multiple times
 - Multiple complete media query blocks duplicated
 
 Recommendation: Clean up duplicate CSS rules to reduce file size by ~40-50%.
@@ -595,9 +1047,42 @@ This will improve:
 - CSS parsing speed
 - Code maintainability
 
+JavaScript File Size:
+---------------------
+main.js is approximately 2000 lines. Consider:
+- Splitting into modules (if using bundler)
+- Comment cleanup for production
+- Minification for production
+
+Image Optimization:
+-------------------
+- Compress hero images (currently ~200-400KB each)
+- Use WebP format with fallbacks
+- Implement srcset for responsive images
+
 ================================================================================
-                             16. CHANGELOG
+                              24. CHANGELOG
 ================================================================================
+
+Version 2.2 - April 7, 2026
+---------------------------
+[ENHANCEMENT] Discount System
+- Implemented automatic discount calculation from Old Price vs Price
+- Formula: (Old Price - Price) / Old Price × 100
+- Rounded discount percentages for cleaner display
+- Console warnings when sheet discount differs from calculation
+- Added originalDiscount field to store sheet value for reference
+- GLOBAL_DISCOUNT override still works for store-wide discounts
+
+[FIX] Default Products
+- Added originalDiscount field to all default products
+- Ensures consistency between sheet-loaded and default products
+
+[DOC] Documentation Updated
+- Complete PROJECT_REPORT.txt rewritten
+- Added comprehensive discount system documentation
+- Documented two-layer discount calculation approach
+- Added owner manual for discount management
 
 Version 2.1 - April 6, 2026
 ---------------------------
@@ -654,7 +1139,7 @@ Version 1.x - Previous Releases
                               END OF REPORT
 ================================================================================
 
-Report Generated: April 6, 2026
+Report Generated: April 7, 2026
 Prepared By: Professional Development Team
 For: Browz Clothing
 

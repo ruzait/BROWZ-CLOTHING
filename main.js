@@ -7,6 +7,7 @@ let products = [
         price: 2700,
         oldPrice: 3200,
         discount: 16,
+        originalDiscount: 16,
         image: 'images/placeholder.svg',
         backImage: '',
         badge: 'New Arrival',
@@ -22,6 +23,7 @@ let products = [
         price: 3500,
         oldPrice: null,
         discount: 0,
+        originalDiscount: 0,
         image: 'images/placeholder.svg',
         backImage: '',
         badge: '',
@@ -37,6 +39,7 @@ let products = [
         price: 8500,
         oldPrice: 12000,
         discount: 29,
+        originalDiscount: 29,
         image: 'images/placeholder.svg',
         backImage: '',
         badge: 'Sale',
@@ -52,6 +55,7 @@ let products = [
         price: 2800,
         oldPrice: 3500,
         discount: 20,
+        originalDiscount: 20,
         image: 'images/placeholder.svg',
         backImage: '',
         badge: 'Popular',
@@ -67,6 +71,7 @@ let products = [
         price: 5500,
         oldPrice: null,
         discount: 0,
+        originalDiscount: 0,
         image: 'images/placeholder.svg',
         backImage: '',
         badge: '',
@@ -911,14 +916,25 @@ async function loadProductsFromExcel() {
             if (!name || !price || price <= 0) return;
             
             const imageUrl = row['Front Image'] || '';
-            
+            const oldPrice = parseFloat(row['Old Price'] || 0) || null;
+            const sheetDiscount = parseFloat(row['Discount %'] || 0) || 0;
+            let calculatedDiscount = 0;
+
+            if (oldPrice && oldPrice > price) {
+                calculatedDiscount = Math.round(((oldPrice - price) / oldPrice) * 100);
+                if (sheetDiscount > 0 && Math.abs(calculatedDiscount - sheetDiscount) > 1) {
+                    console.warn(`Discount in sheet (${sheetDiscount}%) doesn't match calculation based on Rs.${price} vs Rs.${oldPrice}. Updated to ${calculatedDiscount}%.`);
+                }
+            }
+
             validProducts.push({
                 id: validProducts.length + 1,
                 name: name.trim(),
                 category: (row['Category'] || 'general').toLowerCase().trim(),
                 price: price,
-                oldPrice: parseFloat(row['Old Price'] || 0) || null,
-                discount: parseFloat(row['Discount %'] || 0) || 0,
+                oldPrice: oldPrice,
+                discount: calculatedDiscount,
+                originalDiscount: sheetDiscount,
                 image: isValidUrl(imageUrl) ? convertGoogleDriveLink(imageUrl) : '',
                 backImage: row['Back Image'] || '',
                 badge: row['Badge'] || '',
