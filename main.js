@@ -236,6 +236,7 @@ async function loadOffersFromExcel() {
             }
 
             if (isNaN(endDate.getTime())) return false;
+            if (endDate.getTime() < Date.now()) return false;
             
             return true;
         }).map((row, index) => {
@@ -481,6 +482,19 @@ function resetOfferTimer() {
         if (distance <= 0) {
             clearInterval(countdownIntervalId);
             countdownIntervalId = null;
+            offers.splice(currentOfferIndex, 1);
+            
+            if (currentOfferIndex >= offers.length) {
+                currentOfferIndex = 0;
+            }
+            
+            if (offers.length === 0) {
+                const offersSection = document.querySelector('.offers');
+                if (offersSection) offersSection.style.display = 'none';
+                return;
+            }
+            
+            initOffersCarousel();
             return;
         }
         
@@ -936,12 +950,13 @@ async function loadProductsFromExcel() {
                 discount: calculatedDiscount,
                 originalDiscount: sheetDiscount,
                 image: isValidUrl(imageUrl) ? convertGoogleDriveLink(imageUrl) : '',
-                backImage: row['Back Image'] || '',
+                backImage: isValidUrl(row['Back Image']) ? convertGoogleDriveLink(row['Back Image']) : '',
                 badge: row['Badge'] || '',
                 description: row['Description'] || '',
                 brand: row['Brand'] || '',
                 itemCode: row['Item Code'] || '',
-                colors: (row['Colors'] || '').split(',').map(c => c.trim()).filter(c => c)
+                colors: (row['Colors'] || '').split(',').map(c => c.trim()).filter(c => c),
+                timestamp: row['Timestamp'] || ''
             });
         });
         
@@ -1386,9 +1401,16 @@ function renderProducts(filter) {
     const grid = document.getElementById('productsGrid');
     grid.innerHTML = '';
 
+    const sortedProducts = [...products].sort((a, b) => {
+        if (!a.timestamp && !b.timestamp) return 0;
+        if (!a.timestamp) return 1;
+        if (!b.timestamp) return -1;
+        return new Date(b.timestamp) - new Date(a.timestamp);
+    });
+
     let filteredProducts = filter === 'all' 
-        ? products 
-        : products.filter(p => p.category === filter);
+        ? sortedProducts 
+        : sortedProducts.filter(p => p.category === filter);
 
     if (currentSearchQuery.length > 0) {
         filteredProducts = filteredProducts.filter(p => {
@@ -1476,7 +1498,13 @@ function renderHomeProducts() {
     if (!grid) return;
     
     grid.innerHTML = '';
-    const homeProducts = products.slice(0, 10);
+    const sortedProducts = [...products].sort((a, b) => {
+        if (!a.timestamp && !b.timestamp) return 0;
+        if (!a.timestamp) return 1;
+        if (!b.timestamp) return -1;
+        return new Date(b.timestamp) - new Date(a.timestamp);
+    });
+    const homeProducts = sortedProducts.slice(0, 10);
 
     homeProducts.forEach((product, index) => {
         const card = document.createElement('div');
