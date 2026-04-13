@@ -4140,6 +4140,66 @@ button {
     color: #555;
 }
 
+.product-sizes {
+    margin-bottom: 20px;
+}
+
+.size-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--primary-black);
+    margin-bottom: 10px;
+    display: block;
+}
+
+.size-label .required {
+    color: #e74c3c;
+}
+
+.size-label .size-hint {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: #888;
+    margin-left: 5px;
+}
+
+.size-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.size-btn {
+    min-width: 48px;
+    padding: 10px 16px;
+    background: #fff;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.size-btn:hover {
+    border-color: #333;
+    background: #f8f8f8;
+}
+
+.size-btn.selected {
+    background: var(--primary-black);
+    border-color: var(--primary-black);
+    color: #fff;
+}
+
+.size-error {
+    display: block;
+    color: #e74c3c;
+    font-size: 0.85rem;
+    margin-top: 8px;
+}
+
 .product-description {
     margin-bottom: 25px;
     padding: 20px;
@@ -4180,6 +4240,8 @@ button {
     text-decoration: none;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+    border: none;
+    cursor: pointer;
 }
 
 .btn-order-whatsapp:hover {
@@ -6991,6 +7053,66 @@ button {
     background: #fff8e6;
 }
 
+.product-sizes {
+    margin-bottom: 25px;
+}
+
+.size-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 12px;
+    display: block;
+}
+
+.size-label .required {
+    color: #e74c3c;
+}
+
+.size-label .size-hint {
+    font-size: 11px;
+    font-weight: 400;
+    color: #888;
+    margin-left: 5px;
+}
+
+.size-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.size-btn {
+    min-width: 50px;
+    padding: 12px 18px;
+    background: #fff;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.size-btn:hover {
+    border-color: var(--primary-black);
+    background: #f8f8f8;
+}
+
+.size-btn.selected {
+    background: var(--primary-black);
+    border-color: var(--primary-black);
+    color: #fff;
+}
+
+.size-error {
+    display: block;
+    color: #e74c3c;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
 .product-description {
     margin-bottom: 30px;
 }
@@ -7026,6 +7148,8 @@ button {
     position: relative;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border: none;
+    cursor: pointer;
 }
 
 .btn-order-whatsapp::before {

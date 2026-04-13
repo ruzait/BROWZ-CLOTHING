@@ -11,10 +11,10 @@ let products = [
         image: 'images/placeholder.svg',
         backImage: '',
         badge: 'New Arrival',
-        description: 'Premium quality linen shirt, perfect for both casual and formal occasions',
         brand: 'Browz',
         itemCode: 'BC-B000001',
-        colors: ['Black', 'Grey', 'Navy Blue', 'Cream']
+        colors: ['Black', 'Grey', 'Navy Blue', 'Cream'],
+        sizes: ['S', 'M', 'L', 'XL', 'XXL']
     },
     {
         id: 2,
@@ -27,10 +27,10 @@ let products = [
         image: 'images/placeholder.svg',
         backImage: '',
         badge: '',
-        description: 'Comfortable cotton kurtas for daily wear',
         brand: 'Browz',
         itemCode: 'BC-B000002',
-        colors: ['White', 'Blue']
+        colors: ['White', 'Blue'],
+        sizes: ['M', 'L', 'XL']
     },
     {
         id: 3,
@@ -43,10 +43,10 @@ let products = [
         image: 'images/placeholder.svg',
         backImage: '',
         badge: 'Sale',
-        description: 'Beautiful designer sarees with premium fabric',
         brand: 'Browz',
         itemCode: 'BC-B000003',
-        colors: ['Red', 'Maroon', 'Green']
+        colors: ['Red', 'Maroon', 'Green'],
+        sizes: ['S', 'M', 'L']
     },
     {
         id: 4,
@@ -59,10 +59,10 @@ let products = [
         image: 'images/placeholder.svg',
         backImage: '',
         badge: 'Popular',
-        description: 'Adorable party wear for kids',
         brand: 'Browz',
         itemCode: 'BC-B000004',
-        colors: ['Pink', 'Blue', 'Yellow']
+        colors: ['Pink', 'Blue', 'Yellow'],
+        sizes: ['2Y', '3Y', '4Y', '5Y', '6Y']
     },
     {
         id: 5,
@@ -75,10 +75,10 @@ let products = [
         image: 'images/placeholder.svg',
         backImage: '',
         badge: '',
-        description: 'Premium quality silk fabric',
         brand: 'Browz',
         itemCode: 'BC-B000005',
-        colors: ['Red', 'Blue', 'Green']
+        colors: ['Red', 'Blue', 'Green'],
+        sizes: []
     }
 ];
 let currentFilter = 'all';
@@ -101,6 +101,71 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function toTitleCase(text) {
+    if (!text) return '';
+    return text.replace(/\w\S*/g, function(txt) {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+}
+
+let selectedSizes = [];
+
+function selectSize(btn) {
+    const size = btn.dataset.size;
+    const index = selectedSizes.indexOf(size);
+    
+    if (index > -1) {
+        selectedSizes.splice(index, 1);
+        btn.classList.remove('selected');
+    } else {
+        selectedSizes.push(size);
+        btn.classList.add('selected');
+    }
+    
+    document.getElementById('sizeError').style.display = 'none';
+}
+
+function orderViaWhatsApp(product, colors) {
+    if (product.sizes && product.sizes.length > 0 && selectedSizes.length === 0) {
+        document.getElementById('sizeError').style.display = 'block';
+        return;
+    }
+    
+    const hasGlobalDiscount = CONFIG.GLOBAL_DISCOUNT > 0;
+    const effectiveDiscount = hasGlobalDiscount ? CONFIG.GLOBAL_DISCOUNT : (product.discount || 0);
+    const displayPrice = hasGlobalDiscount ? product.price * (1 - CONFIG.GLOBAL_DISCOUNT / 100) : product.price;
+    const originalPrice = product.oldPrice || product.price;
+    const showOldPrice = hasGlobalDiscount ? (originalPrice !== displayPrice) : (product.oldPrice && product.oldPrice !== product.price);
+    const itemCode = product.itemCode || `${CONFIG.PRODUCT_CODE_PREFIX}-${String(product.id).padStart(4, '0')}`;
+    
+    let message = `*${CONFIG.SHOP_NAME}*\n━━━━━━━━━━━━━━━━━━━━━━\n\n*${escapeHtml(product.name)}*`;
+    
+    if (colors && colors.length > 0) {
+        message += `\n*Color:* ${colors.join(', ')}`;
+    }
+    
+    if (selectedSizes.length > 0) {
+        message += `\n*Size:* ${selectedSizes.join(', ')}`;
+    }
+    
+    message += `\n\n*Price:* ${CONFIG.CURRENCY_SYMBOL}${formatPrice(displayPrice)}`;
+    
+    if (showOldPrice) {
+        message += `\n*Old Price:* ~~${CONFIG.CURRENCY_SYMBOL}${formatPrice(originalPrice)}~~\n*Discount:* -${effectiveDiscount}%`;
+    }
+    
+    message += `\n\n*Code:* ${escapeHtml(itemCode)}`;
+    
+    if (product.image) {
+        message += `\n\n*Product Link:*\n${product.image}`;
+    }
+    
+    message += `\n\n━━━━━━━━━━━━━━━━━━━━━━\n\nHi! I'm interested in this product. Is it available?`;
+    
+    const whatsappUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
 }
 
 function handleWhatsAppClick(e) {
@@ -943,7 +1008,7 @@ async function loadProductsFromExcel() {
 
             validProducts.push({
                 id: validProducts.length + 1,
-                name: name.trim(),
+                name: toTitleCase(name.trim()),
                 category: (row['Category'] || 'general').toLowerCase().trim(),
                 price: price,
                 oldPrice: oldPrice,
@@ -952,10 +1017,10 @@ async function loadProductsFromExcel() {
                 image: isValidUrl(imageUrl) ? convertGoogleDriveLink(imageUrl) : '',
                 backImage: isValidUrl(row['Back Image']) ? convertGoogleDriveLink(row['Back Image']) : '',
                 badge: row['Badge'] || '',
-                description: row['Description'] || '',
                 brand: row['Brand'] || '',
                 itemCode: row['Item Code'] || '',
                 colors: (row['Colors'] || '').split(',').map(c => c.trim()).filter(c => c),
+                sizes: (row['Sizes'] || '').split(',').map(s => s.trim()).filter(s => s),
                 timestamp: row['Timestamp'] || ''
             });
         });
@@ -986,10 +1051,10 @@ const defaultProducts = [
         image: 'https://lh3.googleusercontent.com/d/1htrIbJoIKlBLvjTrj1OySWfvv81zYooU=w500',
         backImage: '',
         badge: 'New Arrival',
-        description: 'Premium quality linen shirt, perfect for both casual and formal occasions',
         brand: 'Browz',
         itemCode: 'BC-B000001',
-        colors: ['Black', 'Grey', 'Navy Blue', 'Cream']
+        colors: ['Black', 'Grey', 'Navy Blue', 'Cream'],
+        sizes: ['S', 'M', 'L', 'XL', 'XXL']
     },
     {
         id: 2,
@@ -1001,10 +1066,10 @@ const defaultProducts = [
         image: 'https://placehold.co/400x500/1a1a1a/ffffff?text=Cotton+Kurtas',
         backImage: '',
         badge: '',
-        description: 'Comfortable cotton kurtas for daily wear',
         brand: 'Browz',
         itemCode: 'BC-B000002',
-        colors: ['White', 'Blue']
+        colors: ['White', 'Blue'],
+        sizes: ['M', 'L', 'XL']
     },
     {
         id: 3,
@@ -1016,10 +1081,10 @@ const defaultProducts = [
         image: 'https://placehold.co/400x500/2a2a2a/ffffff?text=Designer+Saree',
         backImage: '',
         badge: 'Sale',
-        description: 'Beautiful designer sarees with premium fabric',
         brand: 'Browz',
         itemCode: 'BC-B000003',
-        colors: ['Red', 'Maroon', 'Green']
+        colors: ['Red', 'Maroon', 'Green'],
+        sizes: ['S', 'M', 'L']
     },
     {
         id: 4,
@@ -1031,10 +1096,10 @@ const defaultProducts = [
         image: 'https://placehold.co/400x500/3a3a3a/ffffff?text=Kids+Party+Wear',
         backImage: '',
         badge: 'Popular',
-        description: 'Adorable party wear for kids',
         brand: 'Browz',
         itemCode: 'BC-B000004',
-        colors: ['Pink', 'Blue', 'Yellow']
+        colors: ['Pink', 'Blue', 'Yellow'],
+        sizes: ['2Y', '3Y', '4Y', '5Y', '6Y']
     },
     {
         id: 5,
@@ -1046,10 +1111,10 @@ const defaultProducts = [
         image: 'https://placehold.co/400x500/4a4a4a/ffffff?text=Silk+Fabric',
         backImage: '',
         badge: '',
-        description: 'Premium quality silk fabric',
         brand: 'Browz',
         itemCode: 'BC-B000005',
-        colors: ['Red', 'Blue', 'Green']
+        colors: ['Red', 'Blue', 'Green'],
+        sizes: []
     }
 ];
 
@@ -1412,14 +1477,13 @@ function renderProducts(filter) {
         ? sortedProducts 
         : sortedProducts.filter(p => p.category === filter);
 
-    if (currentSearchQuery.length > 0) {
+        if (currentSearchQuery.length > 0) {
         filteredProducts = filteredProducts.filter(p => {
             const searchText = [
                 p.name,
                 p.category,
                 p.brand || '',
-                p.itemCode || '',
-                p.description || ''
+                p.itemCode || ''
             ].join(' ').toLowerCase();
             return searchText.includes(currentSearchQuery);
         });
@@ -1579,6 +1643,19 @@ function renderProductDetail(productId) {
         `;
     }
     
+    let sizeSwatches = '';
+    if (product.sizes && product.sizes.length > 0) {
+        sizeSwatches = `
+            <div class="product-sizes">
+                <div class="size-label">Select Size: <span class="required">*</span> <span class="size-hint">(Click to select, double-click to deselect)</span></div>
+                <div class="size-options" id="sizeOptions">
+                    ${product.sizes.map(size => `<button class="size-btn" data-size="${escapeHtml(size)}" onclick="selectSize(this)">${escapeHtml(size)}</button>`).join('')}
+                </div>
+                <span class="size-error" id="sizeError" style="display:none;">Please select at least one size</span>
+            </div>
+        `;
+    }
+    
     const whatsappMessage = `*${CONFIG.SHOP_NAME}*\n━━━━━━━━━━━━━━━━━━━━━━\n\n*${escapeHtml(product.name)}*\n${product.colors && product.colors.length > 0 ? `\n*Color:* ${product.colors.join(', ')}` : ''}\n\n*Price:* ${CONFIG.CURRENCY_SYMBOL}${formatPrice(displayPrice)}${showOldPrice ? `\n*Old Price:* ~~${CONFIG.CURRENCY_SYMBOL}${formatPrice(originalPrice)}~~\n*Discount:* -${effectiveDiscount}%` : ''}\n\n*Code:* ${escapeHtml(itemCode)}${product.image ? `\n\n*Product Link:*\n${product.image}` : ''}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\nHi! I'm interested in this product. Is it available?`;
     const whatsappUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
     
@@ -1623,18 +1700,13 @@ function renderProductDetail(productId) {
                 
                 ${colorSwatches}
                 
-                ${product.description ? `
-                <div class="product-description">
-                    <h3>Description</h3>
-                    <p>${escapeHtml(product.description)}</p>
-                </div>
-                ` : ''}
+                ${sizeSwatches}
                 
                 <div class="product-actions">
-                    <a href="${whatsappUrl}" class="btn-order-whatsapp" target="_blank">
+                    <button class="btn-order-whatsapp" onclick="orderViaWhatsApp(${JSON.stringify(product).replace(/"/g, '&quot;')}, ${JSON.stringify(product.colors || []).replace(/"/g, '&quot;')})">
                         <i class="fab fa-whatsapp"></i>
                         <span>Order via WhatsApp</span>
-                    </a>
+                    </button>
                     
                     <a href="collections.html" class="btn-back-products">
                         <i class="fas fa-arrow-left"></i>
