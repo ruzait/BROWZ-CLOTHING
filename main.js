@@ -221,11 +221,6 @@ const CONFIG = {
     SHOW_BADGE: true,
     SHOW_ADD_TO_CART: false,
     GLOBAL_DISCOUNT: 0,
-    CACHE_TTL: 5 * 60 * 1000,
-    CACHE_KEY: 'browzclothing_products',
-    CACHE_TIME_KEY: 'browzclothing_products_time',
-    OFFERS_CACHE_KEY: 'browzclothing_offers',
-    OFFERS_CACHE_TIME_KEY: 'browzclothing_offers_time',
     PRICE_COLORS: {
         DEFAULT: '#111111',
         OLD_PRICE: '#888888',
@@ -256,17 +251,6 @@ const CATEGORY_COLORS = {
 };
 
 async function loadOffersFromExcel() {
-    const cachedTime = sessionStorage.getItem(CONFIG.OFFERS_CACHE_TIME_KEY);
-    const now = Date.now();
-    
-    if (cachedTime && (now - parseInt(cachedTime)) < CONFIG.CACHE_TTL) {
-        const cached = sessionStorage.getItem(CONFIG.OFFERS_CACHE_KEY);
-        if (cached) {
-            offers = JSON.parse(cached);
-            return offers;
-        }
-    }
-
     try {
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw/pub?gid=291050963&single=true&output=csv';
         
@@ -276,9 +260,7 @@ async function loadOffersFromExcel() {
         const csvText = await response.text();
         if (!csvText || csvText.trim() === '') throw new Error('Empty response');
         
-        // Use custom CSV parser
         const rawRows = parseCSV(csvText);
-        const headers = Object.keys(rawRows.length > 0 ? rawRows[0] : {}).map(h => h.toLowerCase());
         
         if (rawRows.length === 0) throw new Error('No data found');
         
@@ -315,9 +297,6 @@ async function loadOffersFromExcel() {
                 isActive: true
             };
         }).sort((a, b) => new Date(a.endDate) - new Date(b.endDate));
-        
-        sessionStorage.setItem(CONFIG.OFFERS_CACHE_KEY, JSON.stringify(offers));
-        sessionStorage.setItem(CONFIG.OFFERS_CACHE_TIME_KEY, now.toString());
         
         return offers;
     } catch (error) {
@@ -853,36 +832,7 @@ function isValidUrl(string) {
     }
 }
 
-function getCachedProducts() {
-    try {
-        const cached = localStorage.getItem(CONFIG.CACHE_KEY);
-        const cacheTime = localStorage.getItem(CONFIG.CACHE_TIME_KEY);
-        
-        if (cached && cacheTime) {
-            const now = Date.now();
-            const age = now - parseInt(cacheTime);
-            
-            if (age < CONFIG.CACHE_TTL) {
-                return JSON.parse(cached);
-            }
-        }
-    } catch (e) {}
-    return null;
-}
 
-function setCachedProducts(productsData) {
-    try {
-        localStorage.setItem(CONFIG.CACHE_KEY, JSON.stringify(productsData));
-        localStorage.setItem(CONFIG.CACHE_TIME_KEY, Date.now().toString());
-    } catch (e) {}
-}
-
-function clearProductsCache() {
-    try {
-        localStorage.removeItem(CONFIG.CACHE_KEY);
-        localStorage.removeItem(CONFIG.CACHE_TIME_KEY);
-    } catch (e) {}
-}
 
 function validateProduct(item, index) {
     const errors = [];
@@ -951,16 +901,6 @@ function parseCSV(csvText) {
 }
 
 async function loadProductsFromExcel() {
-    // Try cache first
-    try {
-        const cached = getCachedProducts();
-        if (cached && cached.length > 0) {
-            products = cached;
-            return true;
-        }
-    } catch(e) {}
-    
-    // Try fetch from Google Sheets
     try {
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw/pub?gid=1503251048&single=true&output=csv';
         
@@ -1027,7 +967,6 @@ async function loadProductsFromExcel() {
         
         if (validProducts.length > 0) {
             products = validProducts;
-            setCachedProducts(products);
         } else {
             products = defaultProducts;
         }
