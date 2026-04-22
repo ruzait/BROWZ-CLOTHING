@@ -304,6 +304,27 @@ button {
     -webkit-text-stroke: 2px var(--gold);
 }
 
+.sync-text {
+    display: block;
+    margin-top: 20px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gold);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+#preloader.loaded .sync-text {
+    display: none;
+}
+
 .navbar {
     position: fixed;
     top: 0;
@@ -2255,6 +2276,12 @@ button {
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid var(--gold);
+}
+
+.author-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .author-info h4 {
@@ -7459,4 +7486,35 @@ button {
     .install-app-btn {
         display: flex;
     }
+}
+
+/* Refresh Products Button */
+.refresh-products-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--gold) 0%, #d4b76a 100%);
+    border: none;
+    border-radius: 50%;
+    color: var(--primary-black);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-left: 8px;
+}
+
+.refresh-products-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(201, 169, 89, 0.4);
+}
+
+.refresh-products-btn.spinning i {
+    animation: spin 0.5s linear;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }

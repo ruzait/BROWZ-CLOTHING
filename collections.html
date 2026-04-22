@@ -131,11 +131,12 @@
     </script>
 </head>
 <body>
-    <div id="preloader">
-        <div class="loader">
-            <span class="loader-text">BROWZ</span>
-            <span class="loader-text outline">CLOTHING</span>
-        </div>
+<div id="preloader">
+      <div class="loader">
+        <span class="loader-text">BROWZ</span>
+        <span class="loader-text outline">CLOTHING</span>
+        <span class="sync-text">Syncing...</span>
+      </div>
     </div>
 
     <nav class="navbar" id="navbar">
@@ -161,6 +162,9 @@
                 <button class="mobile-search-btn" id="mobileSearchBtn"><i class="fas fa-search"></i></button>
                 <button class="install-app-btn" id="installAppBtn" title="Install App">
                     <i class="fas fa-download"></i>
+                </button>
+                <button class="refresh-products-btn" id="refreshProductsBtn" title="Refresh Products">
+                    <i class="fas fa-sync"></i>
                 </button>
                 <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
                     <span></span>
@@ -288,7 +292,7 @@
     </div>
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script src="main.js?v=6"></script>
+    <script src="main.js?v=13"></script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {

@@ -1,86 +1,5 @@
-// Products array - populated from Google Sheets or default products
-let products = [
-    {
-        id: 1,
-        name: 'Premium Linen Shirt',
-        category: 'men',
-        price: 2700,
-        oldPrice: 3200,
-        discount: 16,
-        originalDiscount: 16,
-        image: 'images/placeholder.svg',
-        backImage: '',
-        badge: 'New Arrival',
-        brand: 'Browz',
-        itemCode: 'BC-B000001',
-        colors: ['Black', 'Grey', 'Navy Blue', 'Cream'],
-        sizes: ['S', 'M', 'L', 'XL', 'XXL']
-    },
-    {
-        id: 2,
-        name: 'Classic Cotton Kurtas',
-        category: 'men',
-        price: 3500,
-        oldPrice: null,
-        discount: 0,
-        originalDiscount: 0,
-        image: 'images/placeholder.svg',
-        backImage: '',
-        badge: '',
-        brand: 'Browz',
-        itemCode: 'BC-B000002',
-        colors: ['White', 'Blue'],
-        sizes: ['M', 'L', 'XL']
-    },
-    {
-        id: 3,
-        name: 'Designer Saree Collection',
-        category: 'women',
-        price: 8500,
-        oldPrice: 12000,
-        discount: 29,
-        originalDiscount: 29,
-        image: 'images/placeholder.svg',
-        backImage: '',
-        badge: 'Sale',
-        brand: 'Browz',
-        itemCode: 'BC-B000003',
-        colors: ['Red', 'Maroon', 'Green'],
-        sizes: ['S', 'M', 'L']
-    },
-    {
-        id: 4,
-        name: 'Kids Party Wear Set',
-        category: 'kids',
-        price: 2800,
-        oldPrice: 3500,
-        discount: 20,
-        originalDiscount: 20,
-        image: 'images/placeholder.svg',
-        backImage: '',
-        badge: 'Popular',
-        brand: 'Browz',
-        itemCode: 'BC-B000004',
-        colors: ['Pink', 'Blue', 'Yellow'],
-        sizes: ['2Y', '3Y', '4Y', '5Y', '6Y']
-    },
-    {
-        id: 5,
-        name: 'Premium Silk Fabric',
-        category: 'fabrics',
-        price: 5500,
-        oldPrice: null,
-        discount: 0,
-        originalDiscount: 0,
-        image: 'images/placeholder.svg',
-        backImage: '',
-        badge: '',
-        brand: 'Browz',
-        itemCode: 'BC-B000005',
-        colors: ['Red', 'Blue', 'Green'],
-        sizes: []
-    }
-];
+// Products array - populated from Google Sheets only
+let products = [];
 let currentFilter = 'all';
 let currentSearchQuery = '';
 
@@ -852,6 +771,35 @@ function validateProduct(item, index) {
     };
 }
 
+// Parse date from Google Sheets format (DD/MM/YYYY HH:MM:SS)
+function parseSheetDate(dateStr) {
+    if (!dateStr) return '';
+    dateStr = dateStr.trim();
+    
+    // Already ISO format
+    if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+        return dateStr;
+    }
+    
+    // Parse DD/MM/YYYY HH:MM:SS or DD/MM/YYYY
+    const ddMmYyyyMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(.*)$/);
+    if (ddMmYyyyMatch) {
+        const day = ddMmYyyyMatch[1].padStart(2, '0');
+        const month = ddMmYyyyMatch[2].padStart(2, '0');
+        const year = ddMmYyyyMatch[3];
+        const time = ddMmYyyyMatch[4] || '';
+        return `${year}-${month}-${day}${time}`;
+    }
+    
+    // Try native parsing as fallback
+    const parsed = new Date(dateStr);
+    if (!isNaN(parsed.getTime())) {
+        return parsed.toISOString().slice(0, 10);
+    }
+    
+    return '';
+}
+
 // Simple CSV Parser (doesn't need PapaParse)
 function parseCSV(csvText) {
     const lines = csvText.split('\n');
@@ -900,7 +848,47 @@ function parseCSV(csvText) {
     return data;
 }
 
+const CACHE_KEY = 'browz_products';
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+
+function getCachedProducts() {
+    try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (!cached) return null;
+        
+        const data = JSON.parse(cached);
+        if (!data.products || !data.timestamp) return null;
+        
+        const now = Date.now();
+        if (now - data.timestamp > CACHE_EXPIRY) {
+            localStorage.removeItem(CACHE_KEY);
+            return null;
+        }
+        
+        return data.products;
+    } catch (e) {
+        return null;
+    }
+}
+
+function setCachedProducts(productsArray) {
+    try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+            products: productsArray,
+            timestamp: Date.now()
+        }));
+    } catch (e) {
+        // Ignore storage errors
+    }
+}
+
 async function loadProductsFromExcel() {
+    // Try cache first
+    const cachedProducts = getCachedProducts();
+    if (cachedProducts && cachedProducts.length > 0) {
+        products = cachedProducts;
+    }
+    
     try {
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSpVJWz6tWq-XwbX-O7J5Qeh64yCO5Wv5SLZyRxUwfiEzbQ3X3OyFV6l41UbuAy1dpFnLwAAsWPe3Aw/pub?gid=1503251048&single=true&output=csv';
         
@@ -910,19 +898,19 @@ async function loadProductsFromExcel() {
         });
         
         if (!response.ok) {
-            products = defaultProducts;
+            products = [];
             return true;
         }
         
         const csvText = await response.text();
         if (!csvText || csvText.trim().length < 10) {
-            products = defaultProducts;
+            products = [];
             return true;
         }
         
         const rows = parseCSV(csvText);
         if (rows.length === 0) {
-            products = defaultProducts;
+            products = [];
             return true;
         }
         
@@ -961,101 +949,23 @@ async function loadProductsFromExcel() {
                 itemCode: row['Item Code'] || '',
                 colors: (row['Colors'] || '').split(',').map(c => c.trim()).filter(c => c),
                 sizes: (row['Sizes'] || '').split(',').map(s => s.trim()).filter(s => s),
-                timestamp: row['Timestamp'] || ''
+                timestamp: parseSheetDate(row['Timestamp'] || row['timestamp'] || '')
             });
         });
         
         if (validProducts.length > 0) {
             products = validProducts;
+            setCachedProducts(validProducts);
         } else {
-            products = defaultProducts;
+            products = [];
         }
         
     } catch (error) {
-        products = defaultProducts;
+        products = [];
     }
     
     return true;
 }
-
-// Default sample products (used if Google Sheets fails)
-const defaultProducts = [
-    {
-        id: 1,
-        name: 'Premium Linen Shirt',
-        category: 'men',
-        price: 2700,
-        oldPrice: 3200,
-        discount: 16,
-        image: 'https://lh3.googleusercontent.com/d/1htrIbJoIKlBLvjTrj1OySWfvv81zYooU=w500',
-        backImage: '',
-        badge: 'New Arrival',
-        brand: 'Browz',
-        itemCode: 'BC-B000001',
-        colors: ['Black', 'Grey', 'Navy Blue', 'Cream'],
-        sizes: ['S', 'M', 'L', 'XL', 'XXL']
-    },
-    {
-        id: 2,
-        name: 'Classic Cotton Kurtas',
-        category: 'men',
-        price: 3500,
-        oldPrice: null,
-        discount: 0,
-        image: 'https://placehold.co/400x500/1a1a1a/ffffff?text=Cotton+Kurtas',
-        backImage: '',
-        badge: '',
-        brand: 'Browz',
-        itemCode: 'BC-B000002',
-        colors: ['White', 'Blue'],
-        sizes: ['M', 'L', 'XL']
-    },
-    {
-        id: 3,
-        name: 'Designer Saree Collection',
-        category: 'women',
-        price: 8500,
-        oldPrice: 12000,
-        discount: 29,
-        image: 'https://placehold.co/400x500/2a2a2a/ffffff?text=Designer+Saree',
-        backImage: '',
-        badge: 'Sale',
-        brand: 'Browz',
-        itemCode: 'BC-B000003',
-        colors: ['Red', 'Maroon', 'Green'],
-        sizes: ['S', 'M', 'L']
-    },
-    {
-        id: 4,
-        name: 'Kids Party Wear Set',
-        category: 'kids',
-        price: 2800,
-        oldPrice: 3500,
-        discount: 20,
-        image: 'https://placehold.co/400x500/3a3a3a/ffffff?text=Kids+Party+Wear',
-        backImage: '',
-        badge: 'Popular',
-        brand: 'Browz',
-        itemCode: 'BC-B000004',
-        colors: ['Pink', 'Blue', 'Yellow'],
-        sizes: ['2Y', '3Y', '4Y', '5Y', '6Y']
-    },
-    {
-        id: 5,
-        name: 'Premium Silk Fabric',
-        category: 'fabrics',
-        price: 5500,
-        oldPrice: null,
-        discount: 0,
-        image: 'https://placehold.co/400x500/4a4a4a/ffffff?text=Silk+Fabric',
-        backImage: '',
-        badge: '',
-        brand: 'Browz',
-        itemCode: 'BC-B000005',
-        colors: ['Red', 'Blue', 'Green'],
-        sizes: []
-    }
-];
 
 document.addEventListener('DOMContentLoaded', async function() {
     AOS.init({
@@ -1136,6 +1046,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     initScrollReveal();
     initWhatsAppFloat();
     initInstallButton();
+    initRefreshButton();
 });
 
 let deferredPrompt;
@@ -1169,6 +1080,42 @@ function initInstallButton() {
         } else {
             alert('📱 To Install Browz Clothing App:\n\n• Android: Tap menu → "Add to Home Screen"\n• iOS: Tap Share → "Add to Home Screen"');
         }
+    });
+}
+
+// Refresh Products Button Logic
+function initRefreshButton() {
+    const refreshBtn = document.getElementById('refreshProductsBtn');
+    if (!refreshBtn) return;
+
+    refreshBtn.addEventListener('click', async () => {
+        refreshBtn.classList.add('spinning');
+        
+        // Clear cache to force fresh fetch
+        localStorage.removeItem(CACHE_KEY);
+        
+        await loadProductsFromExcel();
+        
+        const pageUrl = window.location.href;
+        const isHomePage = !pageUrl.includes('collections.html') && !pageUrl.includes('product.html');
+        const isCollectionsPage = pageUrl.includes('collections.html');
+        const isProductPage = pageUrl.includes('product.html');
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if (isHomePage) {
+            renderHomeProducts();
+        } else if (isCollectionsPage) {
+            renderCollectionsProducts('all');
+        } else if (isProductPage) {
+            const productId = urlParams.get('id');
+            if (productId) {
+                renderProductDetail(productId);
+            }
+        }
+        
+        setTimeout(() => {
+            refreshBtn.classList.remove('spinning');
+        }, 500);
     });
 }
 
